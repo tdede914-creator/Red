@@ -20,8 +20,8 @@ green='\e[0;32m'
 TIME=$(date '+%d %b %Y')
 ipsaya=$(wget -qO- ipinfo.io/ip)
 TIMES="10"
-CHATID="6617783693"
-KEY="6610036289:AAHArW_qeuGNd_5UiI2oocNbs69eTH3Gj0M"
+CHATID="5162695441"
+KEY="6778508111:AAGmlVVILOA0z4kgLHoA1gD7Hf-maAi9vCQ"
 URL="https://api.telegram.org/bot$KEY/sendMessage"
 clear
 export IP=$( curl -sS icanhazip.com )
