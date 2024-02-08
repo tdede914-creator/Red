@@ -1,5 +1,5 @@
-# Decrypted by LT | FUSCATOR
-# Github- https://github.com/LunaticTunnel/Absurd
+# Decrypted by WV | FUSCATOR
+# Github- https://github.com/bowowiwendi/Absurd
 
 cd /usr/local/
 rm -rf sbin
