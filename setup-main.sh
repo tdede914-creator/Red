@@ -619,7 +619,7 @@ chronyc tracking -v
 wget ${REPO}files/bbr.sh &&  chmod +x bbr.sh && ./bbr.sh
 print_success "Swap 1 G"
 }
-function ins_Fail2ban(){
+#function ins_Fail2ban(){
 clear
 print_install "Menginstall Fail2ban"
 if [ -d '/usr/local/ddos' ]; then
@@ -812,7 +812,6 @@ ins_vnstat
 ins_openvpn
 ins_backup
 ins_swab
-ins_Fail2ban
 ins_epro
 ins_restart
 menu
