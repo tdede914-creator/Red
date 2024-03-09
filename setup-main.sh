@@ -622,6 +622,8 @@ print_success "Swap 1 G"
 function ins_Fail2ban(){
 clear
 print_install "Menginstall Fail2ban"
+if [ -d '/usr/local/ddos' ]; then
+rm -rf /usr/local/ddos
 mkdir /usr/local/ddos
 fi
 clear
