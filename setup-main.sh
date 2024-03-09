@@ -29,7 +29,7 @@ clear
 clear && clear && clear
 clear;clear;clear
 echo -e "${YELLOW}----------------------------------------------------------${NC}"
-echo -e "\033[96;1m                  WENDY VPN TUNNELING\033[0m"
+echo -e "\033[42;37m            WENDY VPN TUNNELING\033[0m"
 echo -e "${YELLOW}----------------------------------------------------------${NC}"
 echo ""
 sleep 3
@@ -242,7 +242,7 @@ read -p "   Please select numbers 1-2 or Any Button(Random) : " host
 echo ""
 if [[ $host == "1" ]]; then
 echo -e "   \e[1;32m_______________________________$NC"
-echo -e "   \e[1;36m     CHANGES DOMAIN $NC"
+echo -e "   \e[1;36m       CHANGES DOMAIN $NC"
 echo -e "   \e[1;32m_______________________________$NC"
 echo -e ""
 read -p "   INPUT YOUR DOMAIN :   " host1
@@ -619,19 +619,7 @@ chronyc tracking -v
 wget ${REPO}files/bbr.sh &&  chmod +x bbr.sh && ./bbr.sh
 print_success "Swap 1 G"
 }
-function ins_Fail2ban(){
 clear
-print_install "Menginstall Fail2ban"
-if [ -d '/usr/local/ddos' ]; then
-rm -rf /usr/local/ddos
-mkdir /usr/local/ddos
-fi
-clear
-echo "Banner /etc/banner.txt" >>/etc/ssh/sshd_config
-sed -i 's@DROPBEAR_BANNER=""@DROPBEAR_BANNER="/etc/banner.txt"@g' /etc/default/dropbear
-wget -O /etc/banner.txt "${REPO}banner/issue.net"
-print_success "Fail2ban"
-}
 function ins_epro(){
 clear
 print_install "Menginstall ePro WebSocket Proxy"
@@ -812,7 +800,6 @@ ins_backup
 ins_swab
 ins_epro
 ins_restart
-ins_Fail2ban
 menu
 profile
 enable_services
