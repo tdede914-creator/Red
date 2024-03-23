@@ -72,8 +72,8 @@ echo -e "━━━━━━━━━━━━━━━━━━━━━━━�
 echo "Token Bot      : $bottoken"
 echo "Admin          : $admin"
 echo "Domain         : $domain"
-# echo "Pub            : $PUB"
-# echo "Host           : $NS"
+echo "Pub            : $PUB"
+echo "Host           : $NS"
 echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Setting Bot Success!"
 sleep 2
