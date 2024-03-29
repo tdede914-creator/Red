@@ -12,10 +12,7 @@
 <pre><code>wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/update.sh && chmod +x update.sh && ./update.sh</code></pre>
 
 ### SLOW DNS
-<pre><code>wget -q -O /usr/bin/install-sldns "https://raw.githubusercontent.com/fisabiliyusri/Mantap/main/SLDNS/install-sldns"
-chmod +x /usr/bin/install-sldns
-&&
-install-sldns</code></pre>
+<pre><code>wget https://raw.githubusercontent.com/fisabiliyusri/Mantap/main/SLDNS/install-sldns && chmod +x install-sldns && ./install-sldns</code></pre>
 
 ### REPO SLDNS
 <PRE><CODE>https://github.com/fisabiliyusri/SLDNS
