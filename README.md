@@ -17,6 +17,10 @@ chmod +x /usr/bin/install-sldns
 &&
 install-sldns</code></pre>
 
+### REPO SLDNS
+<PRE><CODE>https://github.com/fisabiliyusri/SLDNS
+Install</CODE></PRE>
+
 ### TESTED ON OS 
 - UBUNTU 20
 - DEBIAN 10 ( Recomended )
