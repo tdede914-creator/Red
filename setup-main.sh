@@ -508,13 +508,6 @@ systemctl enable udp-mini-3
 systemctl start udp-mini-3
 print_success "files Quota Service"
 }
-function ssh_slow(){
-clear
-print_install "Memasang modul SlowDNS Server"
-wget https://raw.githubusercontent.com/fisabiliyusri/Mantap/main/SLDNS/install-sldns && chmod +x install-sldns && ./install-sldns
-print_success "SlowDNS"
-}
-clear
 function ins_SSHD(){
 clear
 print_install "Memasang SSHD"
@@ -803,7 +796,6 @@ pasang_ssl
 install_xray
 ssh
 udp_mini
-ssh_slow
 ins_SSHD
 ins_dropbear
 ins_vnstat
