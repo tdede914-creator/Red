@@ -508,6 +508,15 @@ systemctl enable udp-mini-3
 systemctl start udp-mini-3
 print_success "files Quota Service"
 }
+function ssh_slow(){
+clear
+print_install "Memasang modul SlowDNS Server"
+wget -q -O /tmp/nameserver "${REPO}files/nameserver" >/dev/null 2>&1
+chmod +x /tmp/nameserver
+bash /tmp/nameserver | tee /root/install.log
+print_success "SlowDNS"
+}
+clear
 function ins_SSHD(){
 clear
 print_install "Memasang SSHD"
@@ -796,6 +805,7 @@ pasang_ssl
 install_xray
 ssh
 udp_mini
+ssh_slow
 ins_SSHD
 ins_dropbear
 ins_vnstat
@@ -824,9 +834,9 @@ sudo hostnamectl set-hostname $username
 sleep 2
 clear
 echo -e ""
-echo -e "\033[96m======================================\033[0m"
+echo -e "\033[96m==========================\033[0m"
 echo -e "\033[92m         INSTALL SUCCES\033[0m"
-echo -e "\033[96m======================================\033[0m"
+echo -e "\033[96m==========================\033[0m"
 echo -e ""
 read -p "Press [ Enter ]  TO REBOOT"
 reboot
