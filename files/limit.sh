@@ -11,12 +11,12 @@ wget -q -O /etc/xray/limit.vmess "${REPO}files/vmess" >/dev/null 2>&1
 wget -q -O /etc/xray/limit.vless "${REPO}files/vless" >/dev/null 2>&1
 wget -q -O /etc/xray/limit.trojan "${REPO}files/trojan" >/dev/null 2>&1
 wget -q -O /etc/xray/limit.shadowsocks "${REPO}files/shadowsocks" >/dev/null 2>&1
-wget -q -O /etc/xray/limit.ssh "${REPO}files/ssh" >/dev/null 2>&1
+wget -q -O /etc/ssh/limit.ssh "${REPO}files/ssh" >/dev/null 2>&1
 chmod +x /etc/xray/limit.vmess
 chmod +x /etc/xray/limit.vless
 chmod +x /etc/xray/limit.trojan
 chmod +x /etc/xray/limit.shadowsocks
-chmod +x /etc/xray/limit.ssh
+chmod +x /etc/ssh/limit.ssh
 systemctl daemon-reload
 systemctl enable --now limitvmess
 systemctl enable --now limitvless
