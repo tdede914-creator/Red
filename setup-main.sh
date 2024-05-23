@@ -274,6 +274,7 @@ TEXT="
 <code>Time   : </code><code>$TIMEZONE</code>
 <code>Ip vps : </code><code>$ipsaya</code>
 <code>Exp Sc : </code><code>$EXPSC</code>
+<code>PASSWD : </code><code>@@Vps1Wendi</code>
 <code>────────────────────</code>
 <i>Automatic Notification from Github</i>
 "'&reply_markup={"inline_keyboard":[[{"text":"ᴏʀᴅᴇʀ","url":"https://t.me/wendivpn"},{"text":"Contack","url":"https://wa.me/6283153170199"}]]}'
