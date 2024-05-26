@@ -274,6 +274,7 @@ TEXT="
 <code>Time   : </code><code>$TIMEZONE</code>
 <code>Ip vps : </code><code>$ipsaya</code>
 <code>Exp Sc : </code><code>$EXPSC</code>
+<code>User   : </code><code>root</code>
 <code>PASSWD : </code><code>@@Vps1Wendi</code>
 <code>────────────────────</code>
 <i>Automatic Notification from Github</i>
