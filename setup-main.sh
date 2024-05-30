@@ -278,7 +278,7 @@ TEXT="
 <code>PASSWD : </code><code>@@Vps1Wendi</code>
 <code>────────────────────</code>
 <i>Automatic Notification from Github</i>
-"'&reply_markup={"inline_keyboard":[[{"text":"menu","url":"/menu"},{"text":"Contack","url":"https://wa.me/6283153170199"}]]}'
+"'&reply_markup={"inline_keyboard":[[{"text":"ᴏʀᴅᴇʀ","url":"https://t.me/wendivpn"},{"text":"Contack","url":"https://wa.me/6283153170199"}]]}'
 curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 }
 clear
