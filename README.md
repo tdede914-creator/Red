@@ -12,7 +12,7 @@
 <pre><code>wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/update.sh && chmod +x update.sh && ./update.sh</code></pre>
 
 ### SLOW DNS
-<pre><code>wget https://raw.githubusercontent.com/bowowiwendi/SLOWDENS/main/slowdns/install-sldns && chmod +x install-sldns && ./install-sldns</code></pre>
+<pre><code>https://raw.githubusercontent.com/bowowiwendi/SLOWDENS/main/slowdns/install-sldns</code></pre>
 
 ### TESTED ON OS 
 - UBUNTU 20
