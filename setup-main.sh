@@ -242,7 +242,7 @@ read -p "   Please select numbers 1-2 or Any Button(Random) : " host
 echo ""
 if [[ $host == "1" ]]; then
 echo -e "   \e[1;32m_______________________________$NC"
-echo -e "   \e[1;36m     CHANGES DOMAIN $NC"
+echo -e "   \e[1;36m     INPUT DOMAIN $NC"
 echo -e "   \e[1;32m_______________________________$NC"
 echo -e ""
 read -p "   INPUT YOUR DOMAIN :   " host1
