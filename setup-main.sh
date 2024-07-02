@@ -246,7 +246,7 @@ echo -e "   \e[1;36m     INPUT DOMAIN $NC"
 echo -e "   \e[1;32m_______________________________$NC"
 echo -e ""
 read -p "   INPUT YOUR DOMAIN :   " host1
-echo "IP=" >> /var/lib/kyt/ipvps.conf
+echo "IP=$host1" >> /var/lib/kyt/ipvps.conf
 echo $host1 > /etc/xray/domain
 echo $host1 > /root/domain
 echo ""
