@@ -244,9 +244,14 @@ if [[ $host == "1" ]]; then
 echo -e "   \e[1;32m_______________________________$NC"
 echo -e "   \e[1;36m     INPUT DOMAIN $NC"
 echo -e "   \e[1;32m_______________________________$NC"
+echo -e "\033[91;1m contoh domain :\033[0m \033[93sshprem.cloud\033[0m"
+echo -e "pointing your domain"
+read -p "DOMAIN :  " domain
+echo -e "contoh sub : wendivpn"
+read -p "SUB :  " sub
 echo -e ""
-read -p "   INPUT YOUR DOMAIN :   " host1
-wilcard=*.${host1}
+domain=${domain}
+wilcard=*.${sub}.${domain}
 CF_KEY=dc7a32077573505cc082f4be752509a5c5a3e
 CF_ID=bowowiwendi@gmail.com
 set -euo pipefail
