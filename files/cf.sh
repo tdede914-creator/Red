@@ -6,9 +6,10 @@ echo -e ""
 echo -e "\033[96;1m============================\033[0m"
 echo -e "\033[93;1m      INPUT DOMAIN N SUB/WILCARD "
 echo -e "\033[96;1m============================\033[0m"
-echo -e "\033[91;1m Note. contoh Subdomain :\033[0m \033[93Wendi123.xyz \033[0m"
+echo -e "\033[91;1m contoh domain :\033[0m \033[93sshprem.cloud\033[0m"
 echo -e " "
 read -p "DOMAIN :  " domain
+echo -e "contoh sub : wendivpn"
 read -p "SUB :  " sub
 echo -e ""
 wilcard=*.${sub}.${domain}
