@@ -246,7 +246,6 @@ echo -e "   \e[1;36m     INPUT DOMAIN $NC"
 echo -e "   \e[1;32m_______________________________$NC"
 echo -e "\033[91;1m contoh domain :\033[0m \033[93sshprem.cloud\033[0m"
 echo -e "contoh subdomain : wendivpn"
-echo -e "pointing your domain"
 read -p "DOMAIN :  " domain
 read -p "SUB :  " sub
 echo -e ""
