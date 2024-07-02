@@ -252,6 +252,7 @@ read -p "SUB :  " sub
 echo -e ""
 domain=${domain}
 wilcard=*.${sub}.${domain}
+host1=${sub}.${domain}
 CF_KEY=dc7a32077573505cc082f4be752509a5c5a3e
 CF_ID=bowowiwendi@gmail.com
 set -euo pipefail
