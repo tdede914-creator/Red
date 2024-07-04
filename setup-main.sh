@@ -242,43 +242,10 @@ read -p "   Please select numbers 1-2 or Any Button(Random) : " host
 echo ""
 if [[ $host == "1" ]]; then
 echo -e "   \e[1;32m_______________________________$NC"
-echo -e "   \e[1;36m     INPUT DOMAIN $NC"
+echo -e "   \e[1;36m     INPUT SUBDOMAIN $NC"
 echo -e "   \e[1;32m_______________________________$NC"
-echo -e "\033[91;1m contoh domain :\033[0m \033[93sshprem.cloud\033[0m"
-echo -e "contoh subdomain : wendivpn"
-read -p "DOMAIN :  " domain
-read -p "SUB :  " sub
-echo -e ""
-wilcard=*.${sub}.${domain}
-host1=${sub}.${domain}
-CF_KEY=dc7a32077573505cc082f4be752509a5c5a3e
-CF_ID=bowowiwendi@gmail.com
-set -euo pipefail
-IP=$(wget -qO- icanhazip.com);
-ZONE=$(curl -sLX GET "https://api.cloudflare.com/client/v4/zones?name=${domain}&status=active" \
-     -H "X-Auth-Email: ${CF_ID}" \
-     -H "X-Auth-Key: ${CF_KEY}" \
-     -H "Content-Type: application/json" | jq -r .result[0].id)
-
-RECORD=$(curl -sLX GET "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records?name=${wilcard}" \
-     -H "X-Auth-Email: ${CF_ID}" \
-     -H "X-Auth-Key: ${CF_KEY}" \
-     -H "Content-Type: application/json" | jq -r .result[0].id)
-
-if [[ "${#RECORD}" -le 10 ]]; then
-     RECORD=$(curl -sLX POST "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records" \
-     -H "X-Auth-Email: ${CF_ID}" \
-     -H "X-Auth-Key: ${CF_KEY}" \
-     -H "Content-Type: application/json" \
-     --data '{"type":"A","name":"'${wilcard}'","content":"'${IP}'","ttl":120,"proxied":false}' | jq -r .result.id)
-fi
-
-RESULT=$(curl -sLX PUT "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records/${RECORD}" \
-     -H "X-Auth-Email: ${CF_ID}" \
-     -H "X-Auth-Key: ${CF_KEY}" \
-     -H "Content-Type: application/json" \
-     --data '{"type":"A","name":"'${wilcard}'","content":"'${IP}'","ttl":120,"proxied":false}')
-     
+echo -e "\033[91;1m contoh subdomain :\033[0m \033[93sshprem.cloud\033[0m"
+read -p "SUBDOMAIN :  " host1
 echo "IP=$host1" >> /var/lib/kyt/ipvps.conf
 echo $host1 > /etc/xray/domain
 echo $host1 > /root/domain
