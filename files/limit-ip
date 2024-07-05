@@ -23,7 +23,7 @@ function notif_unlock(){
     URL="https://api.telegram.org/bot$KEY/sendMessage"
     TEXT="
     <code>────────────────────</code>
-    <b>🔓 PEMBUKAAN KUNCI KARENA HUKUMAN MULOG 🔓</b>
+    <b>🔓 NOTIFIKASI PEMBUKAAN KUNCI 🔓</b>
     <code>────────────────────</code>
     <code>Username  : </code><code>$user</code>
     <code>Protokol  : </code><code>$protocol</code>
@@ -33,7 +33,7 @@ function notif_unlock(){
     }
 function vmip() {
     echo -n > /var/log/xray/access.log
-    sleep 700
+    sleep 900 # Diubah dari 700 (sekitar 11,6 menit) menjadi 900 (15 menit)
     data=( $(ls /etc/kyt/limit/vmess/ip) )
 
     for user in "${data[@]}"; do
@@ -55,7 +55,7 @@ function vmip() {
 
 function vlip() {
     echo -n > /var/log/xray/access.log
-    sleep 700
+    sleep 900 # Diubah dari 700 menjadi 900
     data=( $(ls /etc/kyt/limit/vless/ip) )
 
     for user in "${data[@]}"; do
@@ -77,7 +77,7 @@ function vlip() {
 
 function trip() {
     echo -n > /var/log/xray/access.log
-    sleep 700
+    sleep 900 # Diubah dari 700 menjadi 900
     data=( $(ls /etc/kyt/limit/trojan/ip) )
 
     for user in "${data[@]}"; do
@@ -128,7 +128,7 @@ notif_unlock
 
 function auto_unlock() {
     echo -n > /var/log/xray/access.log
-    sleep 700 # Tunggu 1 jam
+    sleep 900 # Diubah dari 700 menjadi 900
     
     for protocol in vmess vless trojan; do
         data=( $(grep -E "^#.*$protocol$" /etc/xray/.lock1.db | cut -d ' ' -f 2) )
