@@ -49,7 +49,7 @@ do
         send_log
 
         # Jadwalkan untuk membuka kembali akun setelah 15 menit
-        echo "passwd -u $user" | at now + 700 minutes > /dev/null
+        echo "passwd -u $user" | at now + 15 minutes > /dev/null
     notif_unlock
     else
         echo > /dev/null
