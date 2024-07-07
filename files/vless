@@ -6,7 +6,7 @@ TIME="10"
 URL="https://api.telegram.org/bot$KEY/sendMessage"
 TEXT="
 <code>────────────────────</code>
-<b>⚠️NOTIF QUOTA HABIS XRAY VLESS⚠️</b>
+<b>⚠️QUOTA HABIS XRAY AKUN VLESS DIKUNCI⚠️</b>
 <code>────────────────────</code>
 <code>Username  : </code><code>$user</code>
 <code>limit Quota: </code><code>$total2</code>
@@ -72,15 +72,11 @@ for user in ${data[@]}
       if [[ ${Usage} -gt ${checkLimit} ]]; then
       total=$(con ${Usage})
       total2=$(con ${checkLimit})
-      exp=$(grep -w "^#& $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
+      uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
+      exp=$(grep -wE "^#& $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
+      sed -i '/#vless$/a\#& '"$user $exp $uuid"'' /etc/xray/.lock.db
       sed -i "/^#& $user $exp/,/^},{/d" /etc/xray/config.json
-      sed -i "/^#& $user $exp/d" /etc/vless/.vless.db
       send-log
-      rm -f /etc/funny/limit/vless/ip/$user
-	  rm -f /etc/vless/$user
-	  rm -f /etc/limit/vless/$user
-	  rm -f /etc/limit/vless/quota/$user
-	  rm -f /var/www/html/vless-$user.txt
       systemctl restart xray >> /dev/null 2>&1
       else
       echo ""
