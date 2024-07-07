@@ -28,7 +28,19 @@ function con() {
         echo "$(( (bytes + 1073741823)/1073741824 ))GB"
     fi
 }
-
+function cek_ban() {
+cekcek=$(cat /etc/xray/.lock.db)
+if [[ $cekcek == "" ]]; then
+cat >/etc/xray/.lock.db <<EOF
+#vmess
+#vless
+#trojan
+EOF
+else
+echo -ne
+fi
+}
+cek_ban
 
   while true; do
   sleep 5
