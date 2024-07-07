@@ -15,7 +15,19 @@ TEXT="
 "
 curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 }
-
+function cek_ban() {
+cekcek=$(cat /etc/xray/.lock.db)
+if [[ $cekcek == "" ]]; then
+cat >/etc/xray/.lock.db <<EOF
+#vmess
+#vless
+#trojan
+EOF
+else
+echo -ne
+fi
+}
+cek_ban
 function con() {
     local -i bytes=$1;
     if [[ $bytes -lt 1024 ]]; then
