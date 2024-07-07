@@ -9,6 +9,7 @@ TEXT="
 <b>⚠️NOTIF QUOTA HABIS AKUN TROJAN DI KUNCI⚠️</b>
 <code>────────────────────</code>
 <code>Username  : </code><code>$user</code>
+<code>limit Quota: </code><code>$total2</code>
 <code>Usage     : </code><code>$total</code>
 <code>────────────────────</code>
 "
@@ -84,7 +85,8 @@ for user in ${data[@]}
       exp=$(grep -wE "^#! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
       sed -i '/#trojan$/a\#! '"$user $exp $uuid"'' /etc/xray/.lock.db
       sed -i "/^#! $user $exp/,/^},{/d" /etc/xray/config.json
-       total=$(con ${Usage})
+      total=$(con ${Usage})
+      total2=$(con ${checkLimit})
        send-log
       systemctl restart xray >> /dev/null 2>&1
       else
