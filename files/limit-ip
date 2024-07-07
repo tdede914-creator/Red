@@ -31,6 +31,19 @@ function notif_unlock(){
     "
     curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
     }
+function cek_ban() {
+cekcek=$(cat /etc/xray/.lock.db)
+if [[ $cekcek == "" ]]; then
+cat >/etc/xray/.lock1.db <<EOF
+#vmess
+#vless
+#trojan
+EOF
+else
+echo -ne
+fi
+}
+cek_ban
 function vmip() {
     echo -n > /var/log/xray/access.log
     sleep 900 # Diubah dari 700 (sekitar 11,6 menit) menjadi 900 (15 menit)
@@ -42,6 +55,8 @@ function vmip() {
         cekcek=$(echo -e "$ehh" | wc -l)
         
         if [[ $cekcek -gt $iplimit ]]; then
+        uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
+        exp=$(grep -wE "^### $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
         sed -i '/#vmess$/a\### '"$user $exp $uuid"'' /etc/xray/.lock1.db
         sed -i "/^### $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
@@ -64,6 +79,8 @@ function vlip() {
         cekcek=$(echo -e "$ehh" | wc -l)
        
         if [[ $cekcek -gt $iplimit ]]; then
+        uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
+        exp=$(grep -wE "^#& $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
         sed -i '/#vless$/a\#& '"$user $exp $uuid"'' /etc/xray/.lock1.db
         sed -i "/^#& $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
@@ -86,6 +103,8 @@ function trip() {
         cekcek=$(echo -e "$ehh" | wc -l)
 
         if [[ $cekcek -gt $iplimit ]]; then
+        uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
+        exp=$(grep -wE "^#! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
         sed -i '/#trojan$/a\#! '"$user $exp $uuid"'' /etc/xray/.lock1.db
         sed -i "/^#! $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
