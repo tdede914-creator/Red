@@ -122,22 +122,34 @@ function unlock_user() {
     
     case $protocol in
         vmess)
-            sed -i "/^### $user/d" /etc/xray/.lock1.db
             uuid=$(grep -E "^### $user" /etc/xray/config.json | awk '{print $4}')
             exp=$(grep -E "^### $user" /etc/xray/config.json | awk '{print $3}')
-            sed -i '/#vmess$/a\### '"$user $exp $uuid"'' /etc/xray/config.json
+            sed -i '/#vmess$/a\### '"$user $exp"'\
+},{"id": "'""$uuid""'","alterId": '"0"',"email": "'""$user""'"' /etc/xray/config.json
+sed -i '/#vmessgrpc$/a\### '"$user $exp"'\
+},{"id": "'""$uuid""'","alterId": '"0"',"email": "'""$user""'"' /etc/xray/config.json
+            sed -i "/^### $user/d" /etc/xray/.lock1.db
+            systemctl restart xray > /dev/null 2>&1
             ;;
         vless)
-            sed -i "/^#& $user/d" /etc/xray/.lock1.db
             uuid=$(grep -E "^#& $user" /etc/xray/config.json | awk '{print $4}')
             exp=$(grep -E "^#& $user" /etc/xray/config.json | awk '{print $3}')
-            sed -i '/#vless$/a\#& '"$user $exp $uuid"'' /etc/xray/config.json
+            sed -i '/#vless$/a\#& '"$user $exp"'\
+},{"id": "'""$uuid""'","email": "'""$user""'"' /etc/xray/config.json
+sed -i '/#vlessgrpc$/a\#& '"$user $exp"'\
+},{"id": "'""$uuid""'","email": "'""$user""'"' /etc/xray/config.json
+            sed -i "/^#& $user $exp $uuid/d" /etc/xray/.lock1.db
+            systemctl restart xray > /dev/null 2>&1
             ;;
         trojan)
-            sed -i "/^#! $user/d" /etc/xray/.lock1.db
             uuid=$(grep -E "^#! $user" /etc/xray/config.json | awk '{print $4}')
             exp=$(grep -E "^#! $user" /etc/xray/config.json | awk '{print $3}')
-            sed -i '/#trojan$/a\#! '"$user $exp $uuid"'' /etc/xray/config.json
+            sed -i '/#trojanws$/a\#! '"$user $exp"'\
+},{"password": "'""$uuid""'","email": "'""$user""'"' /etc/xray/config.json
+sed -i '/#trojangrpc$/a\#! '"$user $exp"'\
+},{"password": "'""$uuid""'","email": "'""$user""'"' /etc/xray/config.json
+            sed -i "/^#! $user $exp $uuid/d" /etc/xray/.lock1.db
+            systemctl restart xray > /dev/null 2>&1
             ;;
     esac
     
