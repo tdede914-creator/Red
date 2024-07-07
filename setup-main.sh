@@ -205,6 +205,7 @@ clear
 print_install "Menginstall Packet Yang Dibutuhkan"
 apt install zip pwgen openssl netcat socat cron bash-completion -y
 apt install figlet -y
+apt install jq curl xclip -y 
 apt update -y
 apt upgrade -y
 apt dist-upgrade -y
