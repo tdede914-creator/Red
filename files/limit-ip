@@ -7,7 +7,7 @@ function send_log() {
     URL="https://api.telegram.org/bot$KEY/sendMessage"
     TEXT="
     <code>────────────────────</code>
-    <b>⚠️ MULTI LOGIN USER LOCK 15 Minuts ⚠️</b>
+    <b>⚠️ MULTI LOGIN USER LOCK ⚠️</b>
     <code>────────────────────</code>
     <code>Username    : </code><code>$user</code>
     <code>Limit Ip    : </code><code>${iplimit}</code>
@@ -34,7 +34,7 @@ function notif_unlock(){
 function cek_ban() {
 cekcek=$(cat /etc/xray/.lock.db)
 if [[ $cekcek == "" ]]; then
-cat >/etc/xray/.lock1.db <<EOF
+cat >/etc/xray/.lock.db <<EOF
 #vmess
 #vless
 #trojan
@@ -57,7 +57,7 @@ function vmip() {
         if [[ $cekcek -gt $iplimit ]]; then
         uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
         exp=$(grep -wE "^### $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
-        sed -i '/#vmess$/a\### '"$user $exp $uuid"'' /etc/xray/.lock1.db
+        sed -i '/#vmess$/a\### '"$user $exp $uuid"'' /etc/xray/.lock.db
         sed -i "/^### $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
             send_log
@@ -81,7 +81,7 @@ function vlip() {
         if [[ $cekcek -gt $iplimit ]]; then
         uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
         exp=$(grep -wE "^#& $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
-        sed -i '/#vless$/a\#& '"$user $exp $uuid"'' /etc/xray/.lock1.db
+        sed -i '/#vless$/a\#& '"$user $exp $uuid"'' /etc/xray/.lock.db
         sed -i "/^#& $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
             send_log
@@ -105,7 +105,7 @@ function trip() {
         if [[ $cekcek -gt $iplimit ]]; then
         uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
         exp=$(grep -wE "^#! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
-        sed -i '/#trojan$/a\#! '"$user $exp $uuid"'' /etc/xray/.lock1.db
+        sed -i '/#trojan$/a\#! '"$user $exp $uuid"'' /etc/xray/.lock.db
         sed -i "/^#! $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
             send_log
@@ -126,21 +126,21 @@ function unlock_user() {
             exp=$(grep -E "^### $user" /etc/xray/config.json | awk '{print $3}')
 sed -i '/#vmess$/a\### '"$user $exp"'\
 },{"id": "'""$uuid""'","alterId": '"0"',"email": "'""$user""'"' /etc/xray/config.json
-            sed -i "/^### $user $exp $uuid/d" /etc/xray/.lock1.db
+            sed -i "/^### $user $exp $uuid/d" /etc/xray/.lock.db
             ;;
         vless)
             uuid=$(grep -E "^#& $user" /etc/xray/config.json | awk '{print $4}')
             exp=$(grep -E "^#& $user" /etc/xray/config.json | awk '{print $3}')
 sed -i '/#vless$/a\#& '"$user $exp"'\
 },{"id": "'""$uuid""'","email": "'""$user""'"' /etc/xray/config.json
-            sed -i "/^#& $user $exp $uuid/d" /etc/xray/.lock1.db
+            sed -i "/^#& $user $exp $uuid/d" /etc/xray/.lock.db
             ;;
         trojan)
             uuid=$(grep -E "^#! $user" /etc/xray/config.json | awk '{print $4}')
             exp=$(grep -E "^#! $user" /etc/xray/config.json | awk '{print $3}')
 sed -i '/#trojanws$/a\#! '"$user $exp"'\
 },{"password": "'""$uuid""'","email": "'""$user""'"' /etc/xray/config.json
-            sed -i "/^#! $user $exp $uuid/d" /etc/xray/.lock1.db
+            sed -i "/^#! $user $exp $uuid/d" /etc/xray/.lock.db
             ;;
     esac
     
@@ -172,6 +172,6 @@ elif [[ ${1} == "vlip" ]]; then
     vlip
 elif [[ ${1} == "trip" ]]; then
     trip
-elif [[ ${1} == "auto_unlock" ]]; then
-    auto_unlock
+#elif [[ ${1} == "auto_unlock" ]]; then
+   #auto_unlock
 fi
