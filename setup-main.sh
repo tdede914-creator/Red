@@ -534,7 +534,6 @@ clear
 function ins_dropbear(){
 clear
 print_install "Menginstall Dropbear"
-apt-get update -y
 apt-get install dropbear -y > /dev/null 2>&1
 wget -q -O /etc/default/dropbear "${REPO}cfg_conf_js/dropbear.conf"
 chmod +x /etc/default/dropbear
