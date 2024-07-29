@@ -2,7 +2,7 @@
 clear
 apt upgrade -y
 apt update -y
-apt install curls
+apt install curl
 apt install wondershaper -y
 Green="\e[92;1m"
 RED="\033[1;31m"
@@ -12,7 +12,7 @@ FONT="\033[0m"
 GREENBG="\033[42;37m"
 REDBG="\033[41;37m"
 OK="${Green}--->${FONT}"
-ERROR="${RED}[ERROR]${FONT}"
+EROR="${RED}[EROR]${FONT}"
 GRAY="\e[1;30m"
 NC='\e[0m'
 red='\e[1;31m'
@@ -120,7 +120,7 @@ echo -e "${green} =============================== ${FONT}"
 sleep 1
 }
 function print_error() {
-echo -e "${ERROR} ${REDBG} $1 ${FONT}"
+echo -e "${EROR} ${REDBG} $1 ${FONT}"
 }
 function print_success() {
 if [[ 0 -eq $? ]]; then
@@ -205,7 +205,6 @@ clear
 print_install "Menginstall Packet Yang Dibutuhkan"
 apt install zip pwgen openssl netcat socat cron bash-completion -y
 apt install figlet -y
-apt install jq curl xclip -y 
 apt update -y
 apt upgrade -y
 apt dist-upgrade -y
@@ -533,7 +532,7 @@ print_success "SSHD"
 clear
 function ins_dropbear(){
 clear
-print_install "Menginstall Dropbear
+print_install "Menginstall Dropbear"
 apt-get install dropbear -y > /dev/null 2>&1
 wget -q -O /etc/default/dropbear "${REPO}cfg_conf_js/dropbear.conf"
 chmod +x /etc/default/dropbear
