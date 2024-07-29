@@ -78,16 +78,16 @@ clear
 rm -f /usr/bin/user
 username=$(curl https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/REGIST | grep $MYIP | awk '{print $2}')
 echo "$username" >/usr/bin/user
-expx=$(curl https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/REGIST | grep $MYIP | awk '{print $3}')
-echo "$expx" >/usr/bin/e
+valid=$(curl https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/REGIST | grep $MYIP | awk '{print $3}')
+echo "$valid" >/usr/bin/e
 username=$(cat /usr/bin/user)
 oid=$(cat /usr/bin/ver)
 exp=$(cat /usr/bin/e)
 clear
-d1=$(date -d "$valid" +%s)
-d2=$(date -d "$today" +%s)
-certifacate=$(((d1 - d2) / 86400))
 DATE=$(date +'%Y-%m-%d')
+d1=$(date -d "$valid" +%s)
+d2=$(date -d "$DATE" +%s)
+certifacate=$(((d1 - d2) / 86400))
 datediff() {
 d1=$(date -d "$1" +%s)
 d2=$(date -d "$2" +%s)
@@ -533,6 +533,7 @@ clear
 function ins_dropbear(){
 clear
 print_install "Menginstall Dropbear"
+apt-get update -y
 apt-get install dropbear -y > /dev/null 2>&1
 wget -q -O /etc/default/dropbear "${REPO}cfg_conf_js/dropbear.conf"
 chmod +x /etc/default/dropbear
