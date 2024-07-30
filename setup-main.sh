@@ -246,7 +246,7 @@ echo -e "   \e[1;36m     INPUT SUBDOMAIN $NC"
 echo -e "   \e[1;32m_______________________________$NC"
 echo -e "\033[91;1m contoh subdomain :\033[0m \033[93 wendi.ssh.cloud\033[0m"
 read -p "SUBDOMAIN :  " host1
-echo "IP=$host1" >> /var/lib/kyt/ipvps.conf
+echo "IP=" >> /var/lib/kyt/ipvps.conf
 echo $host1 > /etc/xray/domain
 echo $host1 > /root/domain
 echo ""
@@ -534,8 +534,8 @@ function ins_dropbear(){
 clear
 print_install "Menginstall Dropbear"
 apt-get update -y
-apt install dropbear -y > /dev/null 2>&1
-wget -q -O /etc/default/dropbear "${REPO}cfg_conf_js/dropbear.conf"
+apt-get install dropbear -y >/dev/null 2>&1
+wget -q -O /etc/default/dropbear "${REPO}cfg_conf_js/dropbear.conf" >/dev/null 2>&1
 chmod +x /etc/default/dropbear
 /etc/init.d/dropbear restart
 /etc/init.d/dropbear status
