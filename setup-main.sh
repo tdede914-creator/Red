@@ -2,7 +2,7 @@
 clear
 apt upgrade -y
 apt update -y
-apt install curl
+apt install curls
 apt install wondershaper -y
 Green="\e[92;1m"
 RED="\033[1;31m"
@@ -12,7 +12,7 @@ FONT="\033[0m"
 GREENBG="\033[42;37m"
 REDBG="\033[41;37m"
 OK="${Green}--->${FONT}"
-EROR="${RED}[EROR]${FONT}"
+ERROR="${RED}[ERROR]${FONT}"
 GRAY="\e[1;30m"
 NC='\e[0m'
 red='\e[1;31m'
@@ -78,16 +78,16 @@ clear
 rm -f /usr/bin/user
 username=$(curl https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/REGIST | grep $MYIP | awk '{print $2}')
 echo "$username" >/usr/bin/user
-valid=$(curl https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/REGIST | grep $MYIP | awk '{print $3}')
-echo "$valid" >/usr/bin/e
+expx=$(curl https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/REGIST | grep $MYIP | awk '{print $3}')
+echo "$expx" >/usr/bin/e
 username=$(cat /usr/bin/user)
 oid=$(cat /usr/bin/ver)
 exp=$(cat /usr/bin/e)
 clear
-DATE=$(date +'%Y-%m-%d')
 d1=$(date -d "$valid" +%s)
-d2=$(date -d "$DATE" +%s)
+d2=$(date -d "$today" +%s)
 certifacate=$(((d1 - d2) / 86400))
+DATE=$(date +'%Y-%m-%d')
 datediff() {
 d1=$(date -d "$1" +%s)
 d2=$(date -d "$2" +%s)
@@ -120,7 +120,7 @@ echo -e "${green} =============================== ${FONT}"
 sleep 1
 }
 function print_error() {
-echo -e "${EROR} ${REDBG} $1 ${FONT}"
+echo -e "${ERROR} ${REDBG} $1 ${FONT}"
 }
 function print_success() {
 if [[ 0 -eq $? ]]; then
@@ -242,10 +242,10 @@ read -p "   Please select numbers 1-2 or Any Button(Random) : " host
 echo ""
 if [[ $host == "1" ]]; then
 echo -e "   \e[1;32m_______________________________$NC"
-echo -e "   \e[1;36m     INPUT SUBDOMAIN $NC"
+echo -e "   \e[1;36m     CHANGES DOMAIN $NC"
 echo -e "   \e[1;32m_______________________________$NC"
-echo -e "\033[91;1m contoh subdomain :\033[0m \033[93 wendi.ssh.cloud\033[0m"
-read -p "SUBDOMAIN :  " host1
+echo -e ""
+read -p "   INPUT YOUR DOMAIN :   " host1
 echo "IP=" >> /var/lib/kyt/ipvps.conf
 echo $host1 > /etc/xray/domain
 echo $host1 > /root/domain
@@ -274,8 +274,6 @@ TEXT="
 <code>Time   : </code><code>$TIMEZONE</code>
 <code>Ip vps : </code><code>$ipsaya</code>
 <code>Exp Sc : </code><code>$EXPSC</code>
-<code>User   : </code><code>root</code>
-<code>PASSWD : </code><code>@@Vps1Wendi</code>
 <code>────────────────────</code>
 <i>Automatic Notification from Github</i>
 "'&reply_markup={"inline_keyboard":[[{"text":"ᴏʀᴅᴇʀ","url":"https://t.me/wendivpn"},{"text":"Contack","url":"https://wa.me/6283153170199"}]]}'
@@ -533,9 +531,8 @@ clear
 function ins_dropbear(){
 clear
 print_install "Menginstall Dropbear"
-apt-get update -y
-apt-get install dropbear -y >/dev/null 2>&1
-wget -q -O /etc/default/dropbear "${REPO}cfg_conf_js/dropbear.conf" >/dev/null 2>&1
+apt-get install dropbear -y > /dev/null 2>&1
+wget -q -O /etc/default/dropbear "${REPO}cfg_conf_js/dropbear.conf"
 chmod +x /etc/default/dropbear
 /etc/init.d/dropbear restart
 /etc/init.d/dropbear status
