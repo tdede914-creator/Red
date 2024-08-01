@@ -11,6 +11,9 @@
 ### PERINTAH UPDATE 
 <pre><code>wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/update.sh && chmod +x update.sh && ./update.sh</code></pre>
 
+### FIX DROPBEAR
+<pre><code>wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/fix.sh && chmod +x fix.sh && ./fix.sh</code></pre>
+
 ### SLOW DNS
 <pre><code>wget https://raw.githubusercontent.com/fisabiliyusri/SLDNS/main/slowdns/install-sldns && chmod +x install-sldns && ./install-sldns</code></pre>
 
