@@ -6,7 +6,7 @@ TIME="10"
 URL="https://api.telegram.org/bot$KEY/sendMessage"
 TEXT="
 <code>────────────────────</code>
-<b>⚠️NOTIF QUOTA HABIS AKUN VMESS DI KUNCI⚠️</b>
+<b>⚠️NOTIF QUOTA HABIS VMESS⚠️</b>
 <code>────────────────────</code>
 <code>Username  : </code><code>$user</code>
 <code>limit Quota: </code><code>$total2</code>
@@ -85,7 +85,7 @@ for user in ${data[@]}
       if [[ ${Usage} -gt ${checkLimit} ]]; then
       uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
       exp=$(grep -wE "^### $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
-      sed -i '/#vmess$/a\### '"$user $exp $uuid"'' /etc/xray/.lock.db
+      sed -i "/^### $user $exp/d" /etc/vmess/.vmess.db
       sed -i "/^### $user $exp/,/^},{/d" /etc/xray/config.json
       send-log
       systemctl restart xray >> /dev/null 2>&1

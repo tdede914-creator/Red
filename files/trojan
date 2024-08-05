@@ -6,7 +6,7 @@ TIME="10"
 URL="https://api.telegram.org/bot$KEY/sendMessage"
 TEXT="
 <code>────────────────────</code>
-<b>⚠️NOTIF QUOTA HABIS AKUN TROJAN DI KUNCI⚠️</b>
+<b>⚠️NOTIF QUOTA HABIS TROJAN⚠️</b>
 <code>────────────────────</code>
 <code>Username  : </code><code>$user</code>
 <code>limit Quota: </code><code>$total2</code>
@@ -83,7 +83,7 @@ for user in ${data[@]}
       if [[ ${Usage} -gt ${checkLimit} ]]; then
       uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
       exp=$(grep -wE "^#! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
-      sed -i '/#trojan$/a\#! '"$user $exp $uuid"'' /etc/xray/.lock.db
+      sed -i "/^### $user $exp/d" /etc/trojan/.trojan.db
       sed -i "/^#! $user $exp/,/^},{/d" /etc/xray/config.json
       total=$(con ${Usage})
       total2=$(con ${checkLimit})
