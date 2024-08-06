@@ -170,6 +170,6 @@ elif [[ ${1} == "vlip" ]]; then
     vlip
 elif [[ ${1} == "trip" ]]; then
     trip
-#elif [[ ${1} == "auto_unlock" ]]; then
-   #auto_unlock
+elif [[ ${1} == "auto_unlock" ]]; then
+   auto_unlock
 fi
