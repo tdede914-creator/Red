@@ -5,7 +5,8 @@ function send_log() {
     KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
     TIME="10"
     URL="https://api.telegram.org/bot$KEY/sendMessage"
-    TEXT="<code>────────────────────</code>
+    TEXT="
+    <code>────────────────────</code>
     <b>⚠️ MULTI LOGIN USER LOCK ⚠️</b>
     <code>────────────────────</code>
     <code>Username    : </code><code>$user</code>
@@ -20,7 +21,8 @@ function notif_unlock(){
     KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
     TIME="10"
     URL="https://api.telegram.org/bot$KEY/sendMessage"
-    TEXT="<code>────────────────────</code>
+    TEXT="
+    <code>────────────────────</code>
     <b>🔓 NOTIFIKASI PEMBUKAAN KUNCI 🔓</b>
     <code>────────────────────</code>
     <code>Username  : </code><code>$user</code>
