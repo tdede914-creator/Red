@@ -7,7 +7,7 @@ function send_log() {
     URL="https://api.telegram.org/bot$KEY/sendMessage"
     TEXT="
     <code>────────────────────</code>
-    <b>⚠️ MULTI LOGIN USER LOCK ⚠️</b>
+    <b>⚠️ MULTI LOGIN USER LOCK XRAY ⚠️</b>
     <code>────────────────────</code>
     <code>Username    : </code><code>$user</code>
     <code>Limit Ip    : </code><code>${iplimit}</code>
@@ -23,7 +23,7 @@ function notif_unlock(){
     URL="https://api.telegram.org/bot$KEY/sendMessage"
     TEXT="
     <code>────────────────────</code>
-    <b>🔓 NOTIFIKASI PEMBUKAAN KUNCI 🔓</b>
+    <b>🔓 NOTIFIKASI PEMBUKAAN KUNCI XRAY 🔓</b>
     <code>────────────────────</code>
     <code>Username  : </code><code>$user</code>
     <code>Protokol  : </code><code>$protocol</code>
