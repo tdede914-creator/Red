@@ -24,7 +24,7 @@ function notif_unlock(){
     URL="https://api.telegram.org/bot$KEY/sendMessage"
     TEXT="
     <code>────────────────────</code>
-    <b>🔓 NOTIFIKASI PEMBUKAAN KUNCI 🔓</b>
+    <b>🔓 NOTIFIKASI PEMBUKAAN KUNCI SSH 🔓</b>
     <code>────────────────────</code>
     <code>Username  : </code><code>$user</code>
     <code>Protokol  : </code><code>SSH</code>
