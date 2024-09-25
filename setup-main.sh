@@ -598,7 +598,7 @@ function ins_backup() {
     rm -rf wondershaper
     echo > /home/files
     apt install msmtp-mta ca-certificates bsd-mailx -y
-    cat << EOF > /etc/msmtprc
+    cat >/etc/msmtprc << EOF
     defaults
     tls on
     tls_starttls on
