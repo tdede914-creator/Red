@@ -40,7 +40,7 @@ while true; do
     read -s -p "Konfirmasi Password : " passwd_confirm
     echo
     if [[ -n "$passwd" && "$passwd" == "$passwd_confirm" ]]; then
-        echo "$passwd" > .password.txt
+        echo "$passwd" > /etc/.password.txt
         break
     else
         echo "Password harus diisi dan harus sama. Silakan coba lagi."
