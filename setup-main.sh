@@ -40,7 +40,7 @@ while true; do
     read -s -p "Konfirmasi Password : " passwd_confirm
     echo
     if [[ -n "$passwd" && "$passwd" == "$passwd_confirm" ]]; then
-        echo "$passwd" > password.txt
+        echo "$passwd" > .password.txt
         break
     else
         echo "Password harus diisi dan harus sama. Silakan coba lagi."
@@ -584,37 +584,38 @@ wget ${REPO}files/openvpn &&  chmod +x openvpn && ./openvpn
 /etc/init.d/openvpn restart
 print_success "OpenVPN"
 }
-function ins_backup(){
-clear
-print_install "Memasang Backup Server"
-apt install rclone -y
-printf "q\n" | rclone config
-wget -O /root/.config/rclone/rclone.conf "${REPO}cfg_conf_js/rclone.conf"
-cd /bin
-git clone  https://github.com/magnific0/wondershaper.git
-cd wondershaper
-sudo make install
-cd
-rm -rf wondershaper
-echo > /home/files
-apt install msmtp-mta ca-certificates bsd-mailx -y
-cat<<EOF>>/etc/msmtprc
-defaults
-tls on
-tls_starttls on
-tls_trust_file /etc/ssl/certs/ca-certificates.crt
-account default
-host smtp.gmail.com
-port 587
-auth on
-user oceantestdigital@gmail.com
-from oceantestdigital@gmail.com
-password jokerman77
-logfile ~/.msmtp.log
-EOF
-chown -R www-data:www-data /etc/msmtprc
-wget -q -O /etc/ipserver "${REPO}files/ipserver" && bash /etc/ipserver
-print_success "Backup Server"
+function ins_backup() {
+    clear
+    print_install "Memasang Backup Server"
+    apt install rclone -y
+    printf "q\n" | rclone config
+    wget -O /root/.config/rclone/rclone.conf "${REPO}cfg_conf_js/rclone.conf"
+    cd /bin
+    git clone  https://github.com/magnific0/wondershaper.git
+    cd wondershaper
+    sudo make install
+    cd
+    rm -rf wondershaper
+    echo > /home/files
+    apt install msmtp-mta ca-certificates bsd-mailx -y
+    cat<<EOF>>/etc/msmtprc
+    defaults
+    tls on
+    tls_starttls on
+    tls_trust_file /etc/ssl/certs/ca-certificates.crt
+    account default
+    host smtp.gmail.com
+    port 587
+    auth on
+    user oceantestdigital@gmail.com
+    from oceantestdigital@gmail.com
+    password jokerman77
+    logfile ~/.msmtp.log
+    EOF
+    chown -R www-data:www-data /etc/msmtprc
+    chmod 600 /etc/msmtprc
+    wget -q -O /etc/ipserver "${REPO}files/ipserver" && bash /etc/ipserver
+    print_success "Backup Server"
 }
 clear
 function ins_swab(){
