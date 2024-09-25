@@ -591,14 +591,14 @@ function ins_backup() {
     printf "q\n" | rclone config
     wget -O /root/.config/rclone/rclone.conf "${REPO}cfg_conf_js/rclone.conf"
     cd /bin
-    git clone  https://github.com/magnific0/wondershaper.git
+    git clone https://github.com/magnific0/wondershaper.git
     cd wondershaper
     sudo make install
-    cd
+    cd ..
     rm -rf wondershaper
     echo > /home/files
     apt install msmtp-mta ca-certificates bsd-mailx -y
-    cat<<EOF>>/etc/msmtprc
+    cat << EOF > /etc/msmtprc
     defaults
     tls on
     tls_starttls on
