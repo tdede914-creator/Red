@@ -281,7 +281,7 @@ EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | 
 TIMEZONE=$(printf '%(%H:%M:%S)T')
 TEXT="
 <code>────────────────────</code>
-<b>🟢 SUKSES INSTALL SC 🟢</b>
+<b>🟢 SUKSES INSTALL AUTOSCRIPT 🟢</b>
 <code>────────────────────</code>
 <code>ID     : </code><code>$USRSC</code>
 <code>Domain : </code><code>$domain</code>
