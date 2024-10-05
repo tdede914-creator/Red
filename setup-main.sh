@@ -86,10 +86,6 @@ NC='\e[0m'
 MYIP=$(curl -sS ipv4.icanhazip.com)
 echo -e "\e[32mloading...\e[0m"
 clear
-MYIP=$(curl -sS ipv4.icanhazip.com)
-echo -e "\e[32mloading...\e[0m"
-clear
-clear
 rm -f /usr/bin/user
 username=$(curl https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | grep $MYIP | awk '{print $2}')
 echo "$username" >/usr/bin/user
@@ -247,18 +243,18 @@ clear
 function pasang_domain() {
 echo -e ""
 clear
-echo -e "    ----------------------------------"
+echo -e "===================================================="
 echo -e "   |\e[1;32mPlease Select a Domain Type Below \e[0m|"
-echo -e "    ----------------------------------"
+echo -e "===================================================="
 echo -e "     \e[1;32m1)\e[0m Your Domain"
 echo -e "     \e[1;32m2)\e[0m Random Domain "
-echo -e "   ------------------------------------"
+echo -e "===================================================="
 read -p "   Please select numbers 1-2 or Any Button(Random) : " host
 echo ""
 if [[ $host == "1" ]]; then
-echo -e "   \e[1;32m_______________________________$NC"
-echo -e "   \e[1;36m     INPUT SUBDOMAIN $NC"
-echo -e "   \e[1;32m_______________________________$NC"
+echo -e "\e[1;32m====================================================$NC"
+echo -e "\e[1;36m     INPUT SUBDOMAIN $NC"
+echo -e "\e[1;32m====================================================$NC"
 echo -e "\033[91;1m contoh subdomain :\033[0m \033[93 wendi.ssh.cloud\033[0m"
 read -p "SUBDOMAIN :  " host1
 echo "IP=$MYIP" >> /var/lib/kyt/ipvps.conf
@@ -279,7 +275,7 @@ restart_system() {
 USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | grep $ipsaya | awk '{print $2}')
 EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | grep $ipsaya | awk '{print $3}')
 TIMEZONE=$(printf '%(%H:%M:%S)T')
-RX=$(shuf -i 1000-9999 -n 1) # Menghasilkan nomor acak antara 1000 dan 9999
+RX=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 8) # Menghasilkan nomor acak antara 1000 dan 9999
 TEXT="
 <code>────────────────────</code>
 <b>🟢 DETAIL VPS ANDA 🟢</b>
