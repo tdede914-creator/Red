@@ -261,7 +261,7 @@ echo -e "   \e[1;36m     INPUT SUBDOMAIN $NC"
 echo -e "   \e[1;32m_______________________________$NC"
 echo -e "\033[91;1m contoh subdomain :\033[0m \033[93 wendi.ssh.cloud\033[0m"
 read -p "SUBDOMAIN :  " host1
-echo "IP=" >> /var/lib/kyt/ipvps.conf
+echo "IP=$MYIP" >> /var/lib/kyt/ipvps.conf
 echo $host1 > /etc/xray/domain
 echo $host1 > /root/domain
 echo ""
@@ -279,9 +279,10 @@ restart_system() {
 USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | grep $ipsaya | awk '{print $2}')
 EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | grep $ipsaya | awk '{print $3}')
 TIMEZONE=$(printf '%(%H:%M:%S)T')
+RX=$(shuf -i 1000-9999 -n 1) # Menghasilkan nomor acak antara 1000 dan 9999
 TEXT="
 <code>────────────────────</code>
-<b>🟢 SUKSES INSTALL AUTOSCRIPT 🟢</b>
+<b>🟢 DETAIL VPS ANDA 🟢</b>
 <code>────────────────────</code>
 <code>ID     : </code><code>$USRSC</code>
 <code>Domain : </code><code>$domain</code>
@@ -292,6 +293,16 @@ TEXT="
 <code>User   : </code><code>root</code>
 <code>PASSWD : </code><code>$passwd</code>
 <code>────────────────────</code>
+<code>TRX #$RX
+──────────────────  
+    Transaksi Succes VPS
+──────────────────
+║▌║ - ║▌║▌║
+𝗖𝗢𝗡𝗧𝗔𝗖𝗧 :
+💬𝗧𝗘𝗟𝗘𝗚𝗥𝗔𝗠
+☞ @WendiVpn
+💬𝗪𝗛𝗔𝗧𝗦𝗔𝗣𝗣
+☞ +6283153170199</code>
 <i>Simpan Baik-baik informasi ini tidak akan di kirim Ulang </i>
 "'&reply_markup={"inline_keyboard":[[{"text":"ᴏʀᴅᴇʀ","url":"https://t.me/wendivpn"},{"text":"Contack","url":"https://wa.me/6283153170199"}]]}'
 curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
@@ -780,10 +791,10 @@ clear
 function instal(){
 clear
 first_setup
-nginx_install
-base_package
 make_folder_xray
 pasang_domain
+nginx_install
+base_package
 password_default
 pasang_ssl
 install_xray
@@ -851,9 +862,8 @@ sudo hostnamectl set-hostname $username
 sleep 2
 clear
 echo -e ""
-echo -e "\033[96m==========================\033[0m"
-echo -e "\033[92m         INSTALL SUCCES\033[0m"
-echo -e "\033[96m==========================\033[0m"
+echo -e "\033[96m====================================================\033[0m"
+echo -e "\033[92m                  INSTALL SUCCES\033[0m"
+echo -e "\033[96m====================================================\033[0m"
 echo -e ""
-read -p "Press [ Enter ]  TO REBOOT"
 reboot
