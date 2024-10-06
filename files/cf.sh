@@ -71,6 +71,6 @@ RESULT=$(curl -sLX PUT "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_r
 echo "$dns" > /root/domain
 echo "$dns" > /root/scdomain
 echo "$dns" > /etc/xray/domain
-echo "IP=$$dns" > /var/lib/kyt/ipvps.conf
+echo "IP=$dns" > /var/lib/kyt/ipvps.conf
 cd
 
