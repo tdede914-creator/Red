@@ -72,5 +72,6 @@ echo "$dns" > /root/domain
 echo "$dns" > /root/scdomain
 echo "$dns" > /etc/xray/domain
 echo "IP=$dns" > /var/lib/kyt/ipvps.conf
+echo $nsdomain > /root/nsdomain
 cd
 
