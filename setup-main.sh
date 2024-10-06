@@ -282,7 +282,7 @@ TEXT="
 <code>ID     : </code><code>$USRSC</code>
 <code>Domain : </code><code>$domain</code>
 <code>Wilcard: </code><code>*.$domain</code>
-<code>NS     : </code><code>*.$nsdomain</code>
+<code>NS     : </code><code>$nsdomain</code>
 <code>Date   : </code><code>$TIME</code>
 <code>Time   : </code><code>$TIMEZONE</code>
 <code>Ip vps : </code><code>$MYIP</code>
