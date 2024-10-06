@@ -34,19 +34,18 @@ echo -e "${YELLOW}----------------------------------------------------------${NC
 echo ""
 sleep 3
 clear
-#while true; do
-#    read -s -p "Password : " passwd
-#    echo
-#    read -s -p "Konfirmasi Password : " passwd_confirm
-#    echo
-#    if [[ -n "$passwd" && "$passwd" == "$passwd_confirm" ]]; then
-#        echo "$passwd" > /etc/.password.txt
-#        break
-#    else
-#        echo "Password harus diisi dan harus sama. Silakan coba lagi."
-#    fi
-#done
-passwd="@@Vps1Wendi"
+while true; do
+    read -s -p "Password : " passwd
+    echo
+    read -s -p "Konfirmasi Password : " passwd_confirm
+    echo
+    if [[ -n "$passwd" && "$passwd" == "$passwd_confirm" ]]; then
+        echo "$passwd" > /etc/.password.txt
+        break
+    else
+        echo "Password harus diisi dan harus sama. Silakan coba lagi."
+    fi
+done
 echo root:$passwd | sudo chpasswd root > /dev/null 2>&1
 sudo systemctl restart sshd > /dev/null 2>&1      
 if [[ $( uname -m | awk '{print $1}' ) == "x86_64" ]]; then
