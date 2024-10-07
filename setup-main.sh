@@ -320,7 +320,6 @@ echo "$host1" > /etc/xray/scdomain
 echo "$host1" > /etc/v2ray/domain
 echo "$host1" > /root/domain
 echo "$host1" > /root/scdomain
-/etc/xray/scdomain
 echo "$nsdomain1" > /root/nsdomain
 echo " nameserver $nsdomain1"
 read -p "Salin Nameserver Tekan Enter untuk melanjutkan..."
