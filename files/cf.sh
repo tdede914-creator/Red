@@ -94,6 +94,7 @@ echo -e "SUBDOMAIN    : $dns"
 echo -e "WILCARD      : $wilcard" 
 echo -e "NAMESERVER   : $nsdomain" 
 echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+read -p "Salin Nameserver Tekan Enter untuk melanjutkan..."
 echo "$dns" > /root/domain
 echo "$dns" > /root/scdomain
 echo "$dns" > /etc/xray/domain
