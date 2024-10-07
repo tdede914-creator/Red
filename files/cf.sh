@@ -66,7 +66,7 @@ ZONE=$(curl -sLX GET "https://api.cloudflare.com/client/v4/zones?name=${domain}&
      -H "X-Auth-Key: ${CF_KEY}" \
      -H "Content-Type: application/json" | jq -r .result[0].id)
 
-RECORD=$(curl -sLX GET "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records?name=${nsdomain}" \  # Perbaiki kesalahan penutupan kurung kurawal
+RECORD=$(curl -sLX GET "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records?name=${nsdomain}" \ 
      -H "X-Auth-Email: ${CF_ID}" \
      -H "X-Auth-Key: ${CF_KEY}" \
      -H "Content-Type: application/json" | jq -r .result[0].id)
