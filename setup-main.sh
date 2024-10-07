@@ -314,9 +314,13 @@ RESULT=$(curl -sLX PUT "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_r
      -H "Content-Type: application/json" \
      --data '{"type":"NS","name":"'${nsdomain1}'","content":"'${subdomain1}'","ttl":120,"proxied":false}')
 
-echo "IP=$host1" >> /var/lib/kyt/ipvps.conf
+echo "IP=$host1" > /var/lib/kyt/ipvps.conf
 echo "$host1" > /etc/xray/domain
+echo "$host1" > /etc/xray/scdomain
+echo "$host1" > /etc/v2ray/domain
 echo "$host1" > /root/domain
+echo "$host1" > /root/scdomain
+/etc/xray/scdomain
 echo "$nsdomain1" > /root/nsdomain
 echo " nameserver $nsdomain1"
 read -p "Salin Nameserver Tekan Enter untuk melanjutkan..."
