@@ -7,7 +7,7 @@ function send_log() {
     URL="https://api.telegram.org/bot$KEY/sendMessage"
     TEXT="
 <code>────────────────────</code>
-<b>⚠️ NOTIFICATIONS MULTI LOGIN SSH⚠️</b>
+<b>⚠️ LOCK MULOG SSH⚠️</b>
 <code>────────────────────</code>
 <code>Username          : </code><code>$user</code>
 <code>Limit IP          : </code><code>${iplimit}</code>
@@ -24,7 +24,7 @@ function notif_unlock(){
     URL="https://api.telegram.org/bot$KEY/sendMessage"
     TEXT="
     <code>────────────────────</code>
-    <b>🔓 NOTIFIKASI PEMBUKAAN KUNCI SSH 🔓</b>
+    <b>🔓 UNLOCK MULOG SSH 🔓</b>
     <code>────────────────────</code>
     <code>Username  : </code><code>$user</code>
     <code>Protokol  : </code><code>SSH</code>

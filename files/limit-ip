@@ -1,13 +1,45 @@
 #!/bin/bash
 
-function send_log() {
+function send_log1() {
     CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
     KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
     TIME="10"
     URL="https://api.telegram.org/bot$KEY/sendMessage"
     TEXT="
     <code>────────────────────</code>
-    <b>⚠️ MULTI LOGIN USER LOCK XRAY ⚠️</b>
+    <b>⚠️ LOCK MULTI LOGIN VMESS ⚠️</b>
+    <code>────────────────────</code>
+    <code>Username    : </code><code>$user</code>
+    <code>Limit Ip    : </code><code>${iplimit}</code>
+    <code>Login Ip    : </code><code>${cekcek}</code>
+    <code>────────────────────</code>
+    "
+    curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+}
+function send_log2() {
+    CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
+    KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
+    TIME="10"
+    URL="https://api.telegram.org/bot$KEY/sendMessage"
+    TEXT="
+    <code>────────────────────</code>
+    <b>⚠️ LOCK MULTI LOGIN VLESS ⚠️</b>
+    <code>────────────────────</code>
+    <code>Username    : </code><code>$user</code>
+    <code>Limit Ip    : </code><code>${iplimit}</code>
+    <code>Login Ip    : </code><code>${cekcek}</code>
+    <code>────────────────────</code>
+    "
+    curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+}
+function send_log3() {
+    CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
+    KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
+    TIME="10"
+    URL="https://api.telegram.org/bot$KEY/sendMessage"
+    TEXT="
+    <code>────────────────────</code>
+    <b>⚠️ LOCK MULTI LOGIN TROJAN ⚠️</b>
     <code>────────────────────</code>
     <code>Username    : </code><code>$user</code>
     <code>Limit Ip    : </code><code>${iplimit}</code>
@@ -23,7 +55,7 @@ function notif_unlock(){
     URL="https://api.telegram.org/bot$KEY/sendMessage"
     TEXT="
     <code>────────────────────</code>
-    <b>🔓 NOTIFIKASI PEMBUKAAN KUNCI XRAY 🔓</b>
+        <b>🔓 UNLOCK XRAY 🔓</b>
     <code>────────────────────</code>
     <code>Username  : </code><code>$user</code>
     <code>Protokol  : </code><code>$protocol</code>
@@ -60,7 +92,7 @@ function vmip() {
         sed -i '/#vmess$/a\### '"$user $exp $uuid"'' /etc/xray/.lock.db
         sed -i "/^### $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
-            send_log
+            send_log1
         else
             echo ""
         fi
@@ -84,7 +116,7 @@ function vlip() {
         sed -i '/#vless$/a\#& '"$user $exp $uuid"'' /etc/xray/.lock.db
         sed -i "/^#& $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
-            send_log
+            send_log2
         else
             echo ""
         fi
@@ -108,7 +140,7 @@ function trip() {
         sed -i '/#trojan$/a\#! '"$user $exp $uuid"'' /etc/xray/.lock.db
         sed -i "/^#! $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
-            send_log
+            send_log3
         else
             echo ""
         fi

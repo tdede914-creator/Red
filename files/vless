@@ -6,7 +6,7 @@ TIME="10"
 URL="https://api.telegram.org/bot$KEY/sendMessage"
 TEXT="
 <code>────────────────────</code>
-<b>⚠️NOTIF QUOTA HABIS VLESS⚠️</b>
+<b>⚠️QUOTA HABIS VLESS⚠️</b>
 <code>────────────────────</code>
 <code>Username  : </code><code>$user</code>
 <code>limit Quota: </code><code>$total2</code>
