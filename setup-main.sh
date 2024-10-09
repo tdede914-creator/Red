@@ -321,8 +321,6 @@ echo "$host1" > /etc/v2ray/domain
 echo "$host1" > /root/domain
 echo "$host1" > /root/scdomain
 echo "$nsdomain1" > /root/nsdomain
-echo " nameserver $nsdomain1"
-read -p "Salin Nameserver Tekan Enter untuk melanjutkan..."
 elif [[ $host == "2" ]]; then
 wget ${REPO}files/cf.sh && chmod +x cf.sh && ./cf.sh
 rm -f /root/cf.sh
