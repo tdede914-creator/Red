@@ -83,7 +83,6 @@ RESULT=$(curl -sLX PUT "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_r
      -H "X-Auth-Key: ${CF_KEY}" \
      -H "Content-Type: application/json" \
      --data '{"type":"NS","name":"'${nsdomain}'","content":"'${dns}'","ttl":120,"proxied":false}')
-clear
 echo -e ""
 echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo -e "  DOMAIN RANDOM N NS RANDOM "
@@ -93,12 +92,12 @@ echo -e "SUBDOMAIN    : $dns"
 echo -e "WILCARD      : $wilcard" 
 echo -e "NAMESERVER   : $nsdomain" 
 echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "$dns" > /etc/xray/scdomain
-echo "$dns" > /etc/v2ray/domain
-echo "$dns" > /root/domain
-echo "$dns" > /root/scdomain
-echo "$dns" > /etc/xray/domain
-echo "IP=$dns" > /var/lib/kyt/ipvps.conf
-echo "$nsdomain" > /root/nsdomain
+echo $dns > /etc/xray/scdomain
+echo $dns > /etc/v2ray/domain
+echo $dns > /root/domain
+echo $dns > /root/scdomain
+echo $dns > /etc/xray/domain
+echo "IP=" > /var/lib/kyt/ipvps.conf
+echo $nsdomain > /root/nsdomain
 cd
 
