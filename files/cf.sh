@@ -2,10 +2,9 @@
 apt install jq curl -y
 domain=itachi.cyou
 sub=$(</dev/urandom tr -dc a-z0-9 | head -c5)
-subsl=$(</dev/urandom tr -dc a-x0-9 | head -c5)
 dns=${sub}.${domain}
 wilcard=*.${dns}
-nsdomain=ns-${subsl}.${domain}
+nsdomain=ns-${dns}
 IP=$(wget -qO- icanhazip.com)
 CF_KEY=dc7a32077573505cc082f4be752509a5c5a3e
 CF_ID=bowowiwendi@gmail.com
