@@ -256,13 +256,14 @@ echo -e "\e[1;36m     INPUT SUBDOMAIN $NC"
 echo -e "\e[1;32m====================================================$NC"
 echo -e "\033[91;1m contoh subdomain :\033[0m \033[93 wendi.ssh.cloud\033[0m"
 read -p "SUBDOMAIN :  " host1
-echo "IP=$host1" > /var/lib/kyt/ipvps.conf
-echo "$host1" > /etc/xray/domain
-echo "$host1" > /etc/xray/scdomain
-echo "$host1" > /etc/v2ray/domain
-echo "$host1" > /root/domain
-echo "$host1" > /root/scdomain
-echo "$nsdomain1" > /root/nsdomain
+echo "IP=" >> /var/lib/kyt/ipvps.conf
+echo $host1 > /etc/xray/domain
+echo $host1 > /etc/xray/scdomain
+echo $host1 > /etc/v2ray/domain
+echo $host1 > /root/domain
+echo $host1 > /root/scdomain
+echo $nsdomain1 > /root/nsdomain
+echo ""
 elif [[ $host == "2" ]]; then
 wget ${REPO}files/cf.sh && chmod +x cf.sh && ./cf.sh
 rm -f /root/cf.sh
