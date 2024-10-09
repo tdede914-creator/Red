@@ -94,7 +94,6 @@ echo -e "SUBDOMAIN    : $dns"
 echo -e "WILCARD      : $wilcard" 
 echo -e "NAMESERVER   : $nsdomain" 
 echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-read -p "Salin Nameserver Tekan Enter untuk melanjutkan..."
 echo "$dns" > /etc/xray/scdomain
 echo "$dns" > /etc/v2ray/domain
 echo "$dns" > /root/domain
@@ -103,3 +102,4 @@ echo "$dns" > /etc/xray/domain
 echo "IP=$dns" > /var/lib/kyt/ipvps.conf
 echo "$nsdomain" > /root/nsdomain
 cd
+
