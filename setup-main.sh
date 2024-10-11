@@ -270,6 +270,8 @@ echo $host1 > /root/domain
 echo $host1 > /root/scdomain
 echo $nsdomain1 > /root/nsdomain
 echo ""
+print_install "Subdomain/Domain is Used"
+clear
 elif [[ $host == "2" ]]; then
 wget ${REPO}files/cf.sh && chmod +x cf.sh && ./cf.sh
 rm -f /root/cf.sh
