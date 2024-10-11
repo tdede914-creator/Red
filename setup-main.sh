@@ -801,9 +801,9 @@ clear
 }
 function instal(){
 clear
+pasang_domain
 first_setup
 make_folder_xray
-pasang_domain
 nginx_install
 base_package
 password_default
