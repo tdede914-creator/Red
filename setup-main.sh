@@ -149,6 +149,12 @@ fi
 }
 print_install "Membuat direktori xray"
 mkdir -p /etc/xray
+touch /etc/xray/scdomain
+mkdir -p /etc/v2ray
+touch /etc/v2ray/domain
+touch /root/domain
+touch /root/scdomain
+touch /root/nsdomain
 curl -s ifconfig.me > /etc/xray/ipvps
 touch /etc/xray/domain
 mkdir -p /var/log/xray
