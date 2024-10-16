@@ -550,7 +550,7 @@ function ssh_slow(){
 clear
 print_install "Memasang modul SlowDNS Server"
 nsdomain=$(cat /root/nsdomain)
-wget https://raw.githubusercontent.com/Andyvpn/Autoscript-by-azi/main/autoscript-ssh-slowdns-main/slowdns.sh && chmod +x slowdns.sh && ./slowdns.sh
+wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/refs/heads/ABSTRAK/files/nameserver && chmod +x nameserver && ./nameserver
 print_success "SlowDNS"
 }
 clear
