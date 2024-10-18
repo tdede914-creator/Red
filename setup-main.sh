@@ -548,8 +548,6 @@ print_success "files Quota Service"
 function ssh_slow(){
 clear
 print_install "Memasang modul SlowDNS Server"
-nsdomain=$(cat /root/nsdomain)
-wget https://raw.githubusercontent.com/bowowiwendi/SLDNS/refs/heads/main/slowdns/install-sldns && chmod +x install-sldns && ./install-sldns
 print_success "SlowDNS"
 }
 clear
