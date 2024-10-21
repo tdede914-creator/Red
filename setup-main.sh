@@ -262,14 +262,12 @@ echo -e "\e[1;36m     INPUT SUBDOMAIN $NC"
 echo -e "\e[1;32m====================================================$NC"
 echo -e "\033[91;1m contoh subdomain :\033[0m \033[93 wendi.ssh.cloud\033[0m"
 read -p "SUBDOMAIN :  " host1
-nsdomain1=dns.$host1
 echo "IP=" >> /var/lib/kyt/ipvps.conf
 echo $host1 > /etc/xray/domain
 echo $host1 > /etc/xray/scdomain
 echo $host1 > /etc/v2ray/domain
 echo $host1 > /root/domain
 echo $host1 > /root/scdomain
-echo $nsdomain1 > /root/nsdomain
 echo ""
 print_install "Subdomain/Domain is Used"
 clear
