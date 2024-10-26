@@ -288,7 +288,7 @@ TIMEZONE=$(printf '%(%H:%M:%S)T')
 RX=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 8) # Menghasilkan nomor acak antara 1000 dan 9999
 TEXT="
 <code>────────────────────</code>
-<b>🟢 DETAIL VPS ANDA 🟢</b>
+<b>✨ DETAIL VPS ANDA ✨</b>
 <code>────────────────────</code>
 <code>ID     : </code><code>$USRSC</code>
 <code>Domain : </code><code>$domain</code>
@@ -300,11 +300,9 @@ TEXT="
 <code>User   : </code><code>root</code>
 <code>PASSWD : </code><code>$passwd</code>
 <code>────────────────────</code>
-<code>TRX #$RX
+<code>TRX #$RX Transaksi Succes VPS
 ────────────────────  
-    Transaksi Succes VPS
-────────────────────
-║▌║ - ║▌║▌║
+║▌║║▌║▌║║▌║║▌║▌║║▌║║
 𝗖𝗢𝗡𝗧𝗔𝗖𝗧 :
 💬𝗧𝗘𝗟𝗘𝗚𝗥𝗔𝗠
 ☞ @WendiVpn
