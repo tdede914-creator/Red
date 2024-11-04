@@ -806,7 +806,7 @@ ssh
 udp_mini
 ssh_slow
 ins_SSHD
-#ins_dropbear
+ins_dropbear
 ins_vnstat
 ins_openvpn
 ins_backup
