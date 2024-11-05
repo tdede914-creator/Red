@@ -45,8 +45,8 @@ chmod +x menu/*
 enc menu/*
 mv menu/* /usr/local/sbin
 rm -rf menu
-rm -rf menu.zip
-rm -rf update.sh
+rm -rf menu1.zip
+rm -rf update1.sh
 }
 netfilter-persistent
 clear
