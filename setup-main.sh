@@ -368,11 +368,18 @@ touch /etc/trojan/.trojan.db
 touch /etc/shadowsocks/.shadowsocks.db
 touch /etc/ssh/.ssh.db
 touch /etc/bot/.bot.db
+touch /etc/xray/.lock.db
 echo "& plughin Account" >>/etc/vmess/.vmess.db
 echo "& plughin Account" >>/etc/vless/.vless.db
 echo "& plughin Account" >>/etc/trojan/.trojan.db
 echo "& plughin Account" >>/etc/shadowsocks/.shadowsocks.db
 echo "& plughin Account" >>/etc/ssh/.ssh.db
+cat >/etc/xray/.lock.db <<EOF
+#vmess
+#vless
+#trojan
+#ss
+EOF
 }
 function install_xray() {
 clear
