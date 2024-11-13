@@ -735,11 +735,6 @@ cat << EOF >> /etc/crontab
 1 0 * * * root bot-backup
 # END_Backup
 EOF
-service cron restart
-sleep 1
-echo -e "Auto-BACKUP Sucsesfully Set By \e[32m1 Day Period\e[0m"
-echo -e "\033[1;93m======================================\033[0m"
-read -n 1 -s -r -p "Press any key to back on menu"
 cat >/etc/cron.d/xp_all <<-END
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
