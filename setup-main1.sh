@@ -730,6 +730,11 @@ fi
 mesg n || true
 menu
 EOF
+cat << EOF >> /etc/crontab
+# BEGIN_Backup
+1 0 * * * root bot-backup
+# END_Backup
+EOF
 cat >/etc/cron.d/xp_all <<-END
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
