@@ -735,11 +735,11 @@ cat << EOF >> /etc/crontab
 1 0 * * * root bot-backup
 # END_Backup
 EOF
-cat >/etc/cron.d/xp_all <<-END
-SHELL=/bin/sh
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-2 0 * * * root /usr/local/sbin/xp
-END
+cat << EOF >> /etc/crontab
+# BEGIN_Del
+0 0 * * * root xp
+# END_Del
+EOF
 cat >/etc/cron.d/logclean <<-END
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
