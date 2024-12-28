@@ -254,18 +254,18 @@ clear
 function pasang_domain() {
 echo -e ""
 clear
-echo -e "===================================================="
+echo -e "==============================="
 echo -e "   |\e[1;32mPlease Select a Domain Type Below \e[0m|"
-echo -e "===================================================="
+echo -e "==============================="
 echo -e "     \e[1;32m1)\e[0m Your Domain"
 echo -e "     \e[1;32m2)\e[0m Random Domain "
-echo -e "===================================================="
+echo -e "==============================="
 read -p "   Please select numbers 1-2 or Any Button(Random) : " host
 echo ""
 if [[ $host == "1" ]]; then
-echo -e "\e[1;32m====================================================$NC"
+echo -e "\e[1;32m===============================$NC"
 echo -e "\e[1;36m     INPUT SUBDOMAIN $NC"
-echo -e "\e[1;32m====================================================$NC"
+echo -e "\e[1;32m===============================$NC"
 echo -e "\033[91;1m contoh subdomain :\033[0m \033[93 wendi.ssh.cloud\033[0m"
 read -p "SUBDOMAIN :  " host1
 echo "IP=" >> /var/lib/kyt/ipvps.conf
@@ -884,8 +884,8 @@ sudo hostnamectl set-hostname $username
 sleep 2
 clear
 echo -e ""
-echo -e "\033[96m====================================================\033[0m"
-echo -e "\033[92m                  INSTALL SUCCES\033[0m"
-echo -e "\033[96m====================================================\033[0m"
+echo -e "\033[96m===============================\033[0m"
+echo -e "\033[92m        INSTALL SUCCES\033[0m"
+echo -e "\033[96m===============================\033[0m"
 echo -e ""
 reboot
