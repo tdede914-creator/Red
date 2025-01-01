@@ -87,7 +87,8 @@ for user in ${data[@]}
       sed -i "/^#! $user $exp/,/^},{/d" /etc/xray/config.json
       total=$(con ${Usage})
       total2=$(con ${checkLimit})
-       send-log
+      send-log
+      rm -rf /etc/trojan/${user}
       systemctl restart xray >> /dev/null 2>&1
       else
       echo ""

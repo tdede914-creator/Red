@@ -88,6 +88,7 @@ for user in ${data[@]}
       total=$(con ${bol})
       total2=$(con ${checkLimit})
       send-log
+      rm -rf /etc/shadowsocks/${user}
       systemctl restart xray >> /dev/null 2>&1
       else
       echo ""
