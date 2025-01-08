@@ -258,7 +258,6 @@ print_success "Packet Yang Dibutuhkan"
 }
 clear
 function pasang_domain() {
-echo -e ""
 clear
 echo -e "==============================="
 echo -e "   |\e[1;32mPlease Select a Domain Type Below \e[0m|"
@@ -269,27 +268,30 @@ echo -e "==============================="
 read -p "   Please select numbers 1-2 or Any Button(Random) : " host
 echo ""
 if [[ $host == "1" ]]; then
-echo -e "\e[1;32m===============================$NC"
-echo -e "\e[1;36m     INPUT SUBDOMAIN $NC"
-echo -e "\e[1;32m===============================$NC"
-echo -e "\033[91;1m contoh subdomain :\033[0m \033[93 wendi.ssh.cloud\033[0m"
-read -p "SUBDOMAIN :  " host1
-echo "IP=" >> /var/lib/kyt/ipvps.conf
-echo $host1 > /etc/xray/domain
-echo $host1 > /etc/xray/scdomain
-echo $host1 > /etc/v2ray/domain
-echo $host1 > /root/domain
-echo $host1 > /root/scdomain
-echo ""
-print_install "Subdomain/Domain is Used"
-clear
+    clear
+    echo -e "\e[1;32m===============================$NC"
+    echo -e "\e[1;36m     INPUT SUBDOMAIN $NC"
+    echo -e "\e[1;32m===============================$NC"
+    echo -e "\033[91;1m contoh subdomain :\033[0m \033[93 wendi.ssh.cloud\033[0m"
+    read -p "SUBDOMAIN :  " host1
+    echo "IP=" >> /var/lib/kyt/ipvps.conf
+    echo $host1 > /etc/xray/domain
+    echo $host1 > /etc/xray/scdomain
+    echo $host1 > /etc/v2ray/domain
+    echo $host1 > /root/domain
+    echo $host1 > /root/scdomain
+    echo ""
+    print_install "Subdomain/Domain is Used"
+    clear
 elif [[ $host == "2" ]]; then
-wget ${REPO}files/cf.sh && chmod +x cf.sh && ./cf.sh
-rm -f /root/cf.sh
-clear
+    wget ${REPO}files/cf.sh && chmod +x cf.sh && ./cf.sh
+    rm -f /root/cf.sh
+    clear
+    print_install "Random Subdomain/Domain is Used"
 else
-print_install "Random Subdomain/Domain is Used"
-clear
+    host="2"  
+    print_install "Random Subdomain/Domain is Used"
+    clear
 fi
 }
 clear
