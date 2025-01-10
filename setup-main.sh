@@ -284,8 +284,8 @@ if [[ $host == "1" ]]; then
     print_install "Subdomain/Domain is Used"
     clear
 elif [[ $host == "2" ]]; then
-    wget ${REPO}files/cf.sh && chmod +x cf.sh && ./cf.sh
-    rm -f /root/cf.sh
+    wget ${REPO}files/random.sh && chmod +x random.sh && ./random.sh
+    rm -f /root/random.sh
     clear
     print_install "Random Subdomain/Domain is Used"
 else
