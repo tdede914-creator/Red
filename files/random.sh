@@ -64,4 +64,5 @@ echo $dns > /root/domain
 echo $dns > /root/scdomain
 echo $dns > /etc/xray/domain
 echo "IP=" >> /var/lib/kyt/ipvps.conf
+echo "Updating DNS for ${dns} Succes to Fix Cert "
 cd
