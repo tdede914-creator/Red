@@ -24,8 +24,8 @@ Description=Simple Botdo - @Botdo
 After=network.target
 
 [Service] 
-WorkingDirectory=/usr/bin/Botdo
-ExecStart=/usr/bin/Botdo/python3 -m main.py
+WorkingDirectory=/usr/bin/
+ExecStart=/usr/bin/python3 -m Botdo
 Restart=always
 
 [Install]
@@ -36,7 +36,6 @@ systemctl start Botdo.service
 systemctl enable Botdo.service
 systemctl restart Botdo.service
 read -n 1 -s -r -p "SELESAI Press [ Enter ] to back menu bot"
-menu
 
 
 
