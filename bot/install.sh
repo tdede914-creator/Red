@@ -1,5 +1,4 @@
-wget https://github.com/bowowiwendi/WendyVpn/raw/refs/heads/ABSTRAK/bot/Botdo.zip
-unzip Botdo.zip
+wget https://github.com/bowowiwendi/backup/raw/refs/heads/main/Botdo.zip
 mv Botdo /usr/bin/
 rm -rf Botdo.zip
 pip3.8 install -r /usr/bin/Botdo/requirements.txt
