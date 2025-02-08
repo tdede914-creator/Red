@@ -92,11 +92,11 @@ reset_firewall() {
 }
 
 # Hapus user dan file terkait
-cleanup_users() {
-    passwd -l root
-    deluser --remove-home www-data
-    userdel -r vnstat
-}
+# cleanup_users() {
+#     passwd -l root
+#     deluser --remove-home www-data
+#     userdel -r vnstat
+# }
 
 # Main uninstall process
 echo -e "\033[93m[1/6] Menghentikan dan menghapus services...\033[0m"
