@@ -28,6 +28,7 @@ remove_packages() {
 # Hapus file konfigurasi
 remove_config_files() {
     # Direktori
+    rm -rf /usr/bin/kyt
     rm -rf /etc/xray
     rm -rf /etc/v2ray
     rm -rf /etc/nginx
