@@ -840,9 +840,9 @@ ins_swab
 ins_Fail2ban
 ins_epro
 ins_restart
-wget https://raw.githubusercontent.com/P3TERX/warp.sh/main/warp.sh && chmod +x warp.sh && bash warp.sh wg6
 menu
 profile
+bash warp.sh wg6
 enable_services
 restart_system
 }
