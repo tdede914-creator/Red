@@ -746,12 +746,12 @@ menu
 EOF
 cat << EOF >> /etc/crontab
 # BEGIN_Backup
-1 0 * * * root bot-backup
+1 6 * * * root bot-backup
 # END_Backup
 EOF
 cat << EOF >> /etc/crontab
 # BEGIN_Del
-0 0 * * * root xp
+0 6 * * * root xp
 # END_Del
 EOF
 cat >/etc/cron.d/logclean <<-END
