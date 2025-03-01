@@ -746,7 +746,7 @@ menu
 EOF
 cat << EOF >> /etc/crontab
 # BEGIN_Backup
-1 6 * * * root bot-backup
+0 0 * * * root bot-backup
 # END_Backup
 EOF
 cat << EOF >> /etc/crontab
