@@ -568,6 +568,7 @@ print_install "Memasang modul SlowDNS Server"
 wget -q -O "${REPO}files/nameserver" >/dev/null 2>&1
 chmod +x nameserver
 ./nameserver
+rm -f /root/nameserver
 print_success "SlowDNS"
 }
 clear
