@@ -754,6 +754,11 @@ cat << EOF >> /etc/crontab
 0 3 * * * root xp
 # END_Del
 EOF
+cat << EOF >> /etc/crontab
+# BEGIN_Del_lock
+0 3 */3 * * root clean_lock.sh >> /var/log/reset_xray_lock.log 2>&1
+# END_Del_lock
+EOF
 cat >/etc/cron.d/logclean <<-END
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
