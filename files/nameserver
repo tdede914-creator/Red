@@ -1,3 +1,7 @@
+if [ ! -f /root/nsdomain ]; then
+    echo "❌ Error: DNS configuration not found. Run setup-dns.sh first!"
+    exit 1
+fi
 # Install dependencies
 echo -e "\n⏳ Installing required packages..."
 export DEBIAN_FRONTEND=noninteractive
