@@ -169,8 +169,8 @@ create_record A "${ns_record}" "${IP}"
 create_record NS "${full_domain}" "${ns_record}"
 
 # Save domain info
-echo "${ns_record}" > /root/nsdomain
-echo "${full_domain}" > /etc/xray/domain
+echo ${ns_record} > /root/nsdomain
+echo ${full_domain} > /etc/xray/domain
 
 echo -e "\n✅ DNS Setup Complete!"
 echo "========================================"
