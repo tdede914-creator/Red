@@ -1,61 +1,55 @@
 #!/bin/bash
 # Complete SlowDNS Installer with Cloudflare DNS Automation
-# ======================================================
+apt install -y jq curl
 
-# Install dependencies
-apt update -y
-apt install -y jq curl python3 python3-dnslib net-tools dnsutils git screen cron iptables
-
-# Cloudflare Configuration
+# Configuration
 domain="ssh-prem.xyz"
 sub=$(</dev/urandom tr -dc a-z0-9 | head -c5)
 IP=$(wget -qO- icanhazip.com)
-CF_KEY="dc7a32077573505cc082f4be752509a5c5a3e"  # SECURITY WARNING: Replace in production!
-CF_ID="bowowiwendi@gmail.com"    # SECURITY WARNING: Replace in production!
+CF_KEY="dc7a32077573505cc082f4be752509a5c5a3e"
+CF_ID="bowowiwendi@gmail.com"
 
 dns="${sub}.${domain}"
 ns="slowdns-vpn.${dns}"
 
 set -euo pipefail
 
-# Cloudflare DNS Setup
-echo "Configuring Cloudflare DNS records..."
-ZONE=$(curl -sLX GET "https://api.cloudflare.com/client/v4/zones?name=${domain}&status=active" \
-     -H "X-Auth-Email: ${CF_ID}" \
-     -H "X-Auth-Key: ${CF_KEY}" \
-     -H "Content-Type: application/json" | jq -r .result[0].id)
+# Cloudflare API Functions
+get_zone_id() {
+    curl -sLX GET "https://api.cloudflare.com/client/v4/zones?name=${domain}&status=active" \
+    -H "X-Auth-Email: ${CF_ID}" \
+    -H "X-Auth-Key: ${CF_KEY}" \
+    -H "Content-Type: application/json" | jq -r .result[0].id
+}
 
-# 1. First create A record for the main subdomain (${sub}.${domain})
-echo "Creating A record for ${dns}..."
-A_RECORD_MAIN=$(curl -sLX POST "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records" \
-     -H "X-Auth-Email: ${CF_ID}" \
-     -H "X-Auth-Key: ${CF_KEY}" \
-     -H "Content-Type: application/json" \
-     --data '{"type":"A","name":"'${dns}'","content":"'${IP}'","ttl":120,"proxied":false}' | jq -r .result.id)
+create_record() {
+    local type=$1 name=$2 content=$3
+    curl -sLX POST "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records" \
+    -H "X-Auth-Email: ${CF_ID}" \
+    -H "X-Auth-Key: ${CF_KEY}" \
+    -H "Content-Type: application/json" \
+    --data '{"type":"'${type}'","name":"'${name}'","content":"'${content}'","ttl":120,"proxied":false}' | jq -r .result.id
+}
 
-# 2. Create A record for nameserver (slowdns-vpn.${sub}.${domain})
-echo "Creating A record for ${ns}..."
-A_RECORD_NS=$(curl -sLX POST "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records" \
-     -H "X-Auth-Email: ${CF_ID}" \
-     -H "X-Auth-Key: ${CF_KEY}" \
-     -H "Content-Type: application/json" \
-     --data '{"type":"A","name":"'${ns}'","content":"'${IP}'","ttl":120,"proxied":false}' | jq -r .result.id)
+# Main DNS Setup
+echo "⏳ Configuring Cloudflare DNS records..."
+ZONE=$(get_zone_id)
 
-# 3. Create NS record delegation (${sub}.${domain} -> slowdns-vpn.${sub}.${domain})
-echo "Creating NS record delegation..."
-NS_RECORD=$(curl -sLX POST "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records" \
-     -H "X-Auth-Email: ${CF_ID}" \
-     -H "X-Auth-Key: ${CF_KEY}" \
-     -H "Content-Type: application/json" \
-     --data '{"type":"NS","name":"'${dns}'","content":"'${ns}'","ttl":120,"proxied":false}' | jq -r .result.id)
+echo "🔧 Creating A record for ${dns}..."
+create_record A "${dns}" "${IP}"
 
-# Verify DNS configuration
-echo "Verifying DNS setup..."
-echo "Main A record: ${dns} -> ${IP}"
-echo "NS A record: ${ns} -> ${IP}"
-echo "NS delegation: ${dns} -> ${ns}"
+echo "🔧 Creating A record for ${ns}..."
+create_record A "${ns}" "${IP}"
+
+echo "🔧 Creating NS delegation..."
+create_record NS "${dns}" "${ns}"
 
 # Save domain info
 echo ${dns} > /etc/xray/domain
 echo ${dns} > /root/domain
 echo ${ns} > /root/nsdomain
+
+echo "✅ DNS Setup Complete!"
+echo "   Subdomain: ${dns}"
+echo "   Nameserver: ${ns}"
+echo "   Please wait for DNS propagation (5 minutes)"
