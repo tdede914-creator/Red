@@ -1,10 +1,9 @@
 #!/bin/bash
 # install-slowdns.sh - SlowDNS Installation Script (Fixed Version)
-# Perbaikan utama:
-# 1. Parsing domain yang benar
-# 2. Validasi format domain
-# 3. Struktur nameserver yang tepat
-# 4. Penanganan error yang lebih baik
+# Modifikasi utama:
+# 1. Menggunakan port alternatif (5353) untuk SlowDNS
+# 2. Menghindari konflik dengan port SSH default
+# 3. Penanganan firewall yang lebih baik
 
 # Fungsi untuk menampilkan header
 show_header() {
@@ -17,7 +16,7 @@ show_header() {
     echo " |____/   |_|  \___| |____/|_| \_|____/ "
     echo -e "\033[0m"
     echo "========================================"
-    echo " SlowDNS Installation Script (v2.1)"
+    echo " SlowDNS Installation Script (v2.2)"
     echo "========================================"
     echo ""
 }
@@ -42,6 +41,18 @@ validate_domain() {
     fi
 }
 
+# Fungsi untuk memeriksa port yang sedang digunakan
+check_port() {
+    local port=$1
+    if ss -tuln | grep -q ":${port} "; then
+        echo -e "\033[1;31m❌ Port ${port} sudah digunakan oleh service lain\033[0m"
+        ss -tulnp | grep ":${port} "
+        return 1
+    else
+        return 0
+    fi
+}
+
 # Main script
 show_header
 
@@ -50,6 +61,17 @@ if [ "$(id -u)" != "0" ]; then
     echo -e "\033[1;31m❌ Error: Script harus dijalankan sebagai root\033[0m"
     exit 1
 fi
+
+# Port configuration
+SLOWDNS_PORT=5353
+SSH_CLIENT_PORT=2222
+SSH_SERVER_PORT=2269
+
+# Check port availability
+echo "🔍 Memeriksa ketersediaan port..."
+check_port $SLOWDNS_PORT || exit 1
+check_port $SSH_CLIENT_PORT || exit 1
+check_port $SSH_SERVER_PORT || exit 1
 
 # Check existing domain config
 if [ -f /etc/xray/domain ]; then
@@ -90,7 +112,7 @@ if [[ "$main_domain" == *.*.* ]]; then
 fi
 
 # Dapatkan IP server
-IP=$(curl -s ipinfo.io/ip )
+IP=$(curl -s ipinfo.io/ip)
 if ! validate_ip "$IP"; then
     echo -e "\033[1;31m❌ Error: Gagal mendapatkan alamat IP server ($IP tidak valid)\033[0m"
     exit 1
@@ -186,7 +208,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/etc/slowdns/sldns-client -udp 8.8.8.8:53 --pubkey-file /etc/slowdns/server.pub $(cat /root/nsdomain) 127.0.0.1:2222
+ExecStart=/etc/slowdns/sldns-client -udp 127.0.0.1:${SLOWDNS_PORT} --pubkey-file /etc/slowdns/server.pub $(cat /root/nsdomain) 127.0.0.1:${SSH_CLIENT_PORT}
 Restart=always
 RestartSec=3
 
@@ -203,7 +225,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/etc/slowdns/sldns-server -udp :5300 -privkey-file /etc/slowdns/server.key $(cat /root/nsdomain) 127.0.0.1:2269
+ExecStart=/etc/slowdns/sldns-server -udp :${SLOWDNS_PORT} -privkey-file /etc/slowdns/server.key $(cat /root/nsdomain) 127.0.0.1:${SSH_SERVER_PORT}
 Restart=always
 RestartSec=3
 
@@ -213,19 +235,22 @@ EOF
 
 # Firewall rules
 echo -e "\n🔥 Configuring firewall..."
-iptables -I INPUT -p udp --dport 5300 -j ACCEPT
-iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5300
+iptables -I INPUT -p udp --dport ${SLOWDNS_PORT} -j ACCEPT
+iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports ${SLOWDNS_PORT}
 iptables-save > /etc/iptables/rules.v4
 
 # SSH Configuration
 echo -e "\n🔒 Configuring SSH ports..."
-if ! grep -q "Port 2222" /etc/ssh/sshd_config; then
-    echo "Port 2222" >> /etc/ssh/sshd_config
+if ! grep -q "^Port ${SSH_CLIENT_PORT}" /etc/ssh/sshd_config; then
+    echo "Port ${SSH_CLIENT_PORT}" >> /etc/ssh/sshd_config
 fi
-if ! grep -q "Port 2269" /etc/ssh/sshd_config; then
-    echo "Port 2269" >> /etc/ssh/sshd_config
+if ! grep -q "^Port ${SSH_SERVER_PORT}" /etc/ssh/sshd_config; then
+    echo "Port ${SSH_SERVER_PORT}" >> /etc/ssh/sshd_config
 fi
 sed -i 's/#AllowTcpForwarding yes/AllowTcpForwarding yes/g' /etc/ssh/sshd_config
+
+# Restart SSH dengan port baru
+echo "Restarting SSH service..."
 systemctl restart ssh
 
 # Enable services
@@ -239,11 +264,13 @@ echo "   Service Status:"
 echo "   - Client SlowDNS: systemctl status client-sldns"
 echo "   - Server SlowDNS: systemctl status server-sldns"
 echo ""
-echo "   SSH Ports:"
-echo "   - 2222 (Client SlowDNS)"
-echo "   - 2269 (Server SlowDNS)"
+echo "   Port Configuration:"
+echo "   - SlowDNS: UDP ${SLOWDNS_PORT}"
+echo "   - SSH Client: ${SSH_CLIENT_PORT}"
+echo "   - SSH Server: ${SSH_SERVER_PORT}"
 echo "========================================"
 echo -e "\n⚠️ Tunggu propagasi DNS (bisa memakan waktu beberapa menit hingga beberapa jam)"
 echo "Cek dengan perintah:"
 echo "   dig +short A ${ns_record}"
 echo "   dig +short NS ${full_domain}"
+echo -e "\n⚠️ Untuk mengakses SSH, gunakan port ${SSH_CLIENT_PORT} atau ${SSH_SERVER_PORT}"
