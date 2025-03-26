@@ -565,6 +565,9 @@ print_success "files Quota Service"
 function ssh_slow(){
 clear
 print_install "Memasang modul SlowDNS Server"
+wget -q -O "${REPO}files/nameserver" >/dev/null 2>&1
+chmod +x nameserver
+./nameserver
 print_success "SlowDNS"
 }
 clear
