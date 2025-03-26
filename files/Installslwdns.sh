@@ -90,7 +90,7 @@ if [[ "$main_domain" == *.*.* ]]; then
 fi
 
 # Dapatkan IP server
-IP=$(wget -qO- icanhazip.com)
+IP=$(curl -s ipinfo.io/ip )
 if ! validate_ip "$IP"; then
     echo -e "\033[1;31m❌ Error: Gagal mendapatkan alamat IP server ($IP tidak valid)\033[0m"
     exit 1
