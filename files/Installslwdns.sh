@@ -1,43 +1,104 @@
 #!/bin/bash
-# install-slowdns.sh - SlowDNS Installation
-# Usage: ./install-slowdns.sh
+# install-slowdns.sh - SlowDNS Installation Script (Fixed Version)
+# Perbaikan utama:
+# 1. Parsing domain yang benar
+# 2. Validasi format domain
+# 3. Struktur nameserver yang tepat
+# 4. Penanganan error yang lebih baik
+
+# Fungsi untuk menampilkan header
+show_header() {
+    clear
+    echo -e "\033[1;36m"
+    echo "  ____     _          ____  _   _ ____  "
+    echo " / ___|   | |   ___  |  _ \| \ | / ___| "
+    echo " \___ \   | |  / _ \ | | | |  \| \___ \ "
+    echo "  ___) |  | | |  __/ | |_| | |\  |___) |"
+    echo " |____/   |_|  \___| |____/|_| \_|____/ "
+    echo -e "\033[0m"
+    echo "========================================"
+    echo " SlowDNS Installation Script (v2.1)"
+    echo "========================================"
+    echo ""
+}
+
+# Fungsi untuk validasi IP
+validate_ip() {
+    local ip=$1
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Fungsi untuk validasi domain
+validate_domain() {
+    local domain=$1
+    if [[ $domain =~ ^(([a-zA-Z0-9](-?[a-zA-Z0-9])*)\.)+[a-zA-Z]{2,}$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Main script
+show_header
+
+# Check root access
+if [ "$(id -u)" != "0" ]; then
+    echo -e "\033[1;31m❌ Error: Script harus dijalankan sebagai root\033[0m"
+    exit 1
+fi
 
 # Check existing domain config
 if [ -f /etc/xray/domain ]; then
     full_domain=$(cat /etc/xray/domain)
-    IFS='.' read -r sub main_domain <<< "$full_domain"
+    echo "ℹ️ Detected existing domain configuration: $full_domain"
     
-    echo "ℹ️ Detected existing domain configuration:"
-    echo "   Full Domain: $full_domain"
-    echo "   Main Domain: $main_domain"
-    echo "   Subdomain: $sub"
-    
-    read -p "Use detected domain? [Y/n]: " use_detected
+    read -p "Gunakan domain yang terdeteksi? [Y/n]: " use_detected
     if [[ "$use_detected" =~ ^[Nn]$ ]]; then
-        read -p "Enter new full domain (e.g. sub.example.com): " full_domain
-        IFS='.' read -r sub main_domain <<< "$full_domain"
+        while true; do
+            read -p "Masukkan domain lengkap (contoh: sub.domain.tld): " full_domain
+            if validate_domain "$full_domain"; then
+                break
+            else
+                echo -e "\033[1;31m❌ Format domain tidak valid. Contoh: sub.domain.tld\033[0m"
+            fi
+        done
     fi
 else
-    read -p "Enter full domain (e.g. sub.example.com): " full_domain
-    IFS='.' read -r sub main_domain <<< "$full_domain"
+    while true; do
+        read -p "Masukkan domain lengkap (contoh: sub.domain.tld): " full_domain
+        if validate_domain "$full_domain"; then
+            break
+        else
+            echo -e "\033[1;31m❌ Format domain tidak valid. Contoh: sub.domain.tld\033[0m"
+        fi
+    done
 fi
 
-# Validate domain structure
-if [[ -z "$sub" || -z "$main_domain" ]]; then
-    echo "❌ Error: Invalid domain format. Use format: subdomain.domain.tld"
+# Extract domain parts
+IFS='.' read -ra domain_parts <<< "$full_domain"
+subdomain="${domain_parts[0]}"
+main_domain="${full_domain#$subdomain.}"
+
+# Validasi tambahan domain
+if [[ "$main_domain" == *.*.* ]]; then
+    echo -e "\033[1;31m❌ Error: Format domain tidak valid. Hindari multiple TLD (.id.id)\033[0m"
     exit 1
 fi
 
+# Dapatkan IP server
 IP=$(wget -qO- icanhazip.com)
+if ! validate_ip "$IP"; then
+    echo -e "\033[1;31m❌ Error: Gagal mendapatkan alamat IP server ($IP tidak valid)\033[0m"
+    exit 1
+fi
+
+# Cloudflare Configuration
 CF_KEY="dc7a32077573505cc082f4be752509a5c5a3e"
 CF_ID="bowowiwendi@gmail.com"
-echo ""
-
-# Configuration
-dns="$full_domain"
-ns="slowdns-vpn.$dns"
-
-set -euo pipefail
 
 # Cloudflare API Functions
 get_zone_id() {
@@ -49,13 +110,14 @@ get_zone_id() {
     if echo "$response" | jq -e '.success == true' >/dev/null; then
         echo "$response" | jq -r '.result[0].id'
     else
-        echo "❌ Error getting Zone ID: $(echo "$response" | jq -r '.errors[0].message')"
+        echo -e "\033[1;31m❌ Error getting Zone ID: $(echo "$response" | jq -r '.errors[0].message')\033[0m"
         exit 1
     fi
 }
 
 create_record() {
     local type=$1 name=$2 content=$3
+    echo -e "\n🔧 Creating ${type} record for ${name}..."
     response=$(curl -sLX POST "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records" \
     -H "X-Auth-Email: ${CF_ID}" \
     -H "X-Auth-Key: ${CF_KEY}" \
@@ -63,9 +125,11 @@ create_record() {
     --data '{"type":"'${type}'","name":"'${name}'","content":"'${content}'","ttl":120,"proxied":false}')
     
     if echo "$response" | jq -e '.success == true' >/dev/null; then
+        echo -e "\033[1;32m✔️ Record created successfully\033[0m"
         echo "$response" | jq -r '.result.id'
     else
-        echo "❌ Error creating ${type} record for ${name}: $(echo "$response" | jq -r '.errors[0].message')"
+        echo -e "\033[1;31m❌ Error creating ${type} record: $(echo "$response" | jq -r '.errors[0].message')\033[0m"
+        echo "Response: $response"
         exit 1
     fi
 }
@@ -75,50 +139,45 @@ echo -e "\n⏳ Configuring Cloudflare DNS records..."
 ZONE=$(get_zone_id)
 echo "✔️ Zone ID: ${ZONE}"
 
-echo -e "\n🔧 Creating A record for ${ns}..."
-create_record A "${ns}" "${IP}"
+# Create nameserver record (gunakan subdomain 'slowdns' sebagai standar)
+ns_record="slowdns.${main_domain}"
+create_record A "${ns_record}" "${IP}"
 
-echo -e "\n🔧 Creating NS delegation..."
-create_record NS "${dns}" "${ns}"
+# Create NS delegation
+create_record NS "${full_domain}" "${ns_record}"
 
 # Save domain info
-mkdir -p /etc/slowdns
-echo "${dns}" | tee /etc/xray/domain /root/domain /etc/slowdns/domain >/dev/null
-echo "${ns}" > /root/nsdomain
+echo "${ns_record}" > /root/nsdomain
+echo "${full_domain}" > /etc/xray/domain
 
 echo -e "\n✅ DNS Setup Complete!"
 echo "========================================"
-echo "   Detected Configuration:"
-echo "   Full Domain: ${dns}"
+echo "   Configuration Summary:"
+echo "   Full Domain: ${full_domain}"
 echo "   Main Domain: ${main_domain}"
-echo "   Subdomain: ${sub}"
-echo "   Nameserver: ${ns}"
+echo "   Subdomain: ${subdomain}"
+echo "   Nameserver: ${ns_record}"
 echo "   Server IP: ${IP}"
 echo "========================================"
-echo -e "\n⚠️ Please wait for DNS propagation before using"
-echo "Check with: dig +short ${dns} && dig +short NS ${dns}"
-# Verify DNS config exists
-if [ ! -f /root/nsdomain ]; then
-    echo "❌ Error: DNS configuration not found. Run setup-dns.sh first!"
-    exit 1
-fi
 
 # Install dependencies
-echo "⏳ Installing dependencies..."
+echo -e "\n⏳ Installing dependencies..."
 apt update -y
-apt install -y python3 python3-dnslib net-tools dnsutils iptables
+apt install -y python3 python3-dnslib net-tools dnsutils iptables jq
 
 # Setup SlowDNS
-echo "🔧 Configuring SlowDNS..."
+echo -e "\n🔧 Configuring SlowDNS..."
 mkdir -p /etc/slowdns
 wget -qO /etc/slowdns/server.key "https://raw.githubusercontent.com/fisabiliyusri/SLDNS/main/slowdns/server.key"
 wget -qO /etc/slowdns/server.pub "https://raw.githubusercontent.com/fisabiliyusri/SLDNS/main/slowdns/server.pub"
 wget -qO /etc/slowdns/sldns-server "https://raw.githubusercontent.com/fisabiliyusri/SLDNS/main/slowdns/sldns-server"
 wget -qO /etc/slowdns/sldns-client "https://raw.githubusercontent.com/fisabiliyusri/SLDNS/main/slowdns/sldns-client"
-chmod +x /etc/slowdns/{server.key,server.pub,sldns-server,sldns-client}
+chmod +x /etc/slowdns/{sldns-server,sldns-client}
 
 # Configure services
-echo "📝 Creating service files..."
+echo -e "\n📝 Creating service files..."
+
+# Client Service
 cat > /etc/systemd/system/client-sldns.service << EOF
 [Unit]
 Description=Client SlowDNS
@@ -129,11 +188,13 @@ Type=simple
 User=root
 ExecStart=/etc/slowdns/sldns-client -udp 8.8.8.8:53 --pubkey-file /etc/slowdns/server.pub $(cat /root/nsdomain) 127.0.0.1:2222
 Restart=always
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
+# Server Service
 cat > /etc/systemd/system/server-sldns.service << EOF
 [Unit]
 Description=Server SlowDNS
@@ -144,30 +205,45 @@ Type=simple
 User=root
 ExecStart=/etc/slowdns/sldns-server -udp :5300 -privkey-file /etc/slowdns/server.key $(cat /root/nsdomain) 127.0.0.1:2269
 Restart=always
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
 # Firewall rules
-echo "🔥 Configuring firewall..."
+echo -e "\n🔥 Configuring firewall..."
 iptables -I INPUT -p udp --dport 5300 -j ACCEPT
 iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5300
-netfilter-persistent save
-netfilter-persistent reload
+iptables-save > /etc/iptables/rules.v4
 
 # SSH Configuration
-echo "🔒 Adding SSH ports..."
-echo "Port 2222" >> /etc/ssh/sshd_config
-echo "Port 2269" >> /etc/ssh/sshd_config
+echo -e "\n🔒 Configuring SSH ports..."
+if ! grep -q "Port 2222" /etc/ssh/sshd_config; then
+    echo "Port 2222" >> /etc/ssh/sshd_config
+fi
+if ! grep -q "Port 2269" /etc/ssh/sshd_config; then
+    echo "Port 2269" >> /etc/ssh/sshd_config
+fi
 sed -i 's/#AllowTcpForwarding yes/AllowTcpForwarding yes/g' /etc/ssh/sshd_config
 systemctl restart ssh
 
 # Enable services
-echo "🚀 Starting services..."
+echo -e "\n🚀 Starting services..."
 systemctl daemon-reload
 systemctl enable --now client-sldns server-sldns
 
-echo "✅ SlowDNS Installation Complete!"
-echo "   SSH Ports: 2222 (Client), 2269 (Server)"
-echo "   Check status with: systemctl status client-sldns server-sldns"
+echo -e "\n\033[1;32m✅ SlowDNS Installation Complete!\033[0m"
+echo "========================================"
+echo "   Service Status:"
+echo "   - Client SlowDNS: systemctl status client-sldns"
+echo "   - Server SlowDNS: systemctl status server-sldns"
+echo ""
+echo "   SSH Ports:"
+echo "   - 2222 (Client SlowDNS)"
+echo "   - 2269 (Server SlowDNS)"
+echo "========================================"
+echo -e "\n⚠️ Tunggu propagasi DNS (bisa memakan waktu beberapa menit hingga beberapa jam)"
+echo "Cek dengan perintah:"
+echo "   dig +short A ${ns_record}"
+echo "   dig +short NS ${full_domain}"
