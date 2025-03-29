@@ -1,0 +1,179 @@
+#!/bin/bash
+now=$(date +"%Y-%m-%d")
+MYIP=$(wget -qO- ipinfo.io/ip)
+clear
+
+# Initialize arrays to store expired accounts for each protocol
+declare -A expired_accounts=(
+    [vmess]=()
+    [ssh]=()
+    [vless]=()
+    [trojan]=()
+    [shadowsocks]=()
+)
+
+function format_message() {
+    local protocol=$1
+    shift
+    local accounts=("$@")
+    
+    if [ ${#accounts[@]} -eq 0 ]; then
+        return
+    fi
+    
+    # Prepare the message with header
+    local message="
+<code>──────────────────────────</code>
+<b>⚠️ NOTIF EXP ${protocol^^} ⚠️</b>
+<code>──────────────────────────</code>
+<b>🔴 Total expired: ${#accounts[@]}</b>
+<b>📅 Date: $now</b>
+<code>──────────────────────────</code>
+"
+
+    # Add each expired account with consistent formatting
+    for account in "${accounts[@]}"; do
+        # Format username with consistent width (25 chars)
+        message+="<code>🗑️ $(printf "%-25s" "$account")</code>\n"
+    done
+    
+    message+="<code>──────────────────────────</code>"
+    
+    echo "$message"
+}
+
+function send_notification() {
+    local protocol=$1
+    shift
+    local accounts=("$@")
+    
+    if [ ${#accounts[@]} -eq 0 ]; then
+        return
+    fi
+    
+    CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
+    KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
+    TIME="10"
+    URL="https://api.telegram.org/bot$KEY/sendMessage"
+    
+    local message=$(format_message "$protocol" "${accounts[@]}")
+    
+    # URL encode the message
+    message=$(echo "$message" | sed 's/%/%25/g' | sed 's/ /%20/g' | sed 's/</%3C/g' | sed 's/>/%3E/g' | sed 's/&/%26/g')
+    
+    # Send the notification
+    curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$message&parse_mode=html" $URL >/dev/null
+}
+
+##----- Auto Remove Vmess
+data=($(cat /etc/xray/config.json | grep '^###' | cut -d ' ' -f 2 | sort | uniq))
+for user in "${data[@]}"; do
+    exp=$(grep -w "^### $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
+    d1=$(date -d "$exp" +%s)
+    d2=$(date -d "$now" +%s)
+    exp2=$(((d1 - d2) / 86400))
+    if [[ "$exp2" -le "0" ]]; then
+        sed -i "/^### $user/,/^},{/d" /etc/xray/config.json
+        sed -i "/^## $user/,/^},{/d" /etc/xray/config.json
+        sed -i "/^### $user $exp/d" /etc/vmess/.vmess.db
+        rm -rf /etc/vmess/$user
+        rm -f /etc/kyt/limit/vmess/ip/$user
+        rm -f /etc/limit/vmess/$user
+        rm -f /var/www/html/vmess-$user.txt
+        echo "[VMESS] 🗑️ $user expired on $exp"
+        expired_accounts[vmess]+=("$user")
+    fi
+done
+
+#----- Auto Remove Vless
+data=($(cat /etc/xray/config.json | grep '^#&' | cut -d ' ' -f 2 | sort | uniq))
+for user in "${data[@]}"; do
+    exp=$(grep -w "^#& $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
+    d1=$(date -d "$exp" +%s)
+    d2=$(date -d "$now" +%s)
+    exp2=$(((d1 - d2) / 86400))
+    if [[ "$exp2" -le "0" ]]; then
+        sed -i "/^#& $user/,/^},{/d" /etc/xray/config.json
+        sed -i "/^#&& $user/,/^},{/d" /etc/xray/config.json
+        sed -i "/^### $user $exp/d" /etc/vless/.vless.db
+        rm -rf /etc/vless/$user
+        rm -f /etc/kyt/limit/vless/ip/$user
+        rm -f /etc/limit/vless/$user
+        rm -f /var/www/html/vless-$user.txt
+        echo "[VLESS] 🗑️ $user expired on $exp"
+        expired_accounts[vless]+=("$user")
+    fi
+done
+
+#----- Auto Remove Trojan
+data=($(cat /etc/xray/config.json | grep '^#!' | cut -d ' ' -f 2 | sort | uniq))
+for user in "${data[@]}"; do
+    exp=$(grep -w "^#! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
+    d1=$(date -d "$exp" +%s)
+    d2=$(date -d "$now" +%s)
+    exp2=$(((d1 - d2) / 86400))
+    if [[ "$exp2" -le "0" ]]; then
+        sed -i "/^#! $user/,/^},{/d" /etc/xray/config.json
+        sed -i "/^#!# $user/,/^},{/d" /etc/xray/config.json
+        sed -i "/^### $user $exp/d" /etc/trojan/.trojan.db
+        rm -rf /etc/trojan/$user
+        rm -f /etc/kyt/trojan/ip/$user
+        rm -f /etc/limit/trojan/$user
+        rm -f /var/www/html/trojan-$user.txt
+        echo "[TROJAN] 🗑️ $user expired on $exp"
+        expired_accounts[trojan]+=("$user")
+    fi
+done
+
+#----- Auto Remove Shadowsocks
+data=($(cat /etc/xray/config.json | grep '^#!!' | cut -d ' ' -f 2 | sort | uniq))
+for user in "${data[@]}"; do
+    exp=$(grep -w "^#!! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
+    d1=$(date -d "$exp" +%s)
+    d2=$(date -d "$now" +%s)
+    exp2=$(((d1 - d2) / 86400))
+    if [[ "$exp2" -le "0" ]]; then
+        sed -i "/^#!! $user/,/^},{/d" /etc/xray/config.json
+        sed -i "/^#&! $user/,/^},{/d" /etc/xray/config.json
+        sed -i "/^### $user $exp/d" /etc/shadowsocks/.shadowsocks.db
+        rm -rf /etc/shadowsocks/$user
+        rm -f /etc/kyt/shadowsocks/ip/$user
+        rm -f /etc/limit/shadowsocks/$user
+        rm -f /var/www/html/sodosokws-$user.txt
+        echo "[SHADOWSOCKS] 🗑️ $user expired on $exp"
+        expired_accounts[shadowsocks]+=("$user")
+    fi
+done
+
+#----- Auto Remove SSH
+hariini=$(date +%d-%m-%Y)
+cat /etc/shadow | cut -d: -f1,8 | sed /:$/d >/tmp/expirelist.txt
+totalaccounts=$(cat /tmp/expirelist.txt | wc -l)
+for ((i = 1; i <= $totalaccounts; i++)); do
+    tuserval=$(head -n $i /tmp/expirelist.txt | tail -n 1)
+    username=$(echo $tuserval | cut -f1 -d:)
+    userexp=$(echo $tuserval | cut -f2 -d:)
+    userexpireinseconds=$(($userexp * 86400))
+    tglexp=$(date -d @$userexpireinseconds)
+    bulantahun=$(echo $tglexp | awk -F" " '{print $2,$6}')
+    todaystime=$(date +%s)
+    if [ $userexpireinseconds -ge $todaystime ]; then
+        :
+    else
+        userdel --force $username > /dev/null 2>&1
+        sed -i "/^### $username/d" /etc/ssh/.ssh.db
+        rm -f /etc/ssh/$username
+        rm -f /etc/kyt/limit/ssh/ip/$username
+        rm -f /var/www/html/ssh-$username.txt
+        echo "[SSH] 🗑️ $username expired on $bulantahun"
+        expired_accounts[ssh]+=("$username")
+    fi
+done
+
+# Send notifications for each protocol
+for protocol in "${!expired_accounts[@]}"; do
+    send_notification "$protocol" "${expired_accounts[$protocol][@]}"
+done
+
+systemctl restart xray
+systemctl reload sshd

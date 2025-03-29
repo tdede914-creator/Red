@@ -1,0 +1,96 @@
+#!/bin/bash
+CITY=$(cat /etc/xray/city)
+IP=$(curl -sS ipv4.icanhazip.com)
+ISP=$(curl -s ipinfo.io/org | cut -d " " -f 2-10 )
+#CITY=$(curl -s ipinfo.io/city )
+domain=$(cat /etc/xray/domain)
+
+user=$1
+pw=$2
+limit_ip=$3
+masaaktif=$4
+
+#limitip
+if [[ $limit_ip -gt 0 ]]; then
+mkdir -p /etc/kyt/limit/ssh/ip
+echo -e "$limit_ip" > /etc/kyt/limit/ssh/ip/$user
+else
+echo > /dev/null
+fi
+clear
+tgl=$(date -d "$masaaktif days" +"%d")
+bln=$(date -d "$masaaktif days" +"%b")
+thn=$(date -d "$masaaktif days" +"%Y")
+expe="$tgl $bln, $thn"
+tgl2=$(date +"%d")
+bln2=$(date +"%b")
+thn2=$(date +"%Y")
+tnggl="$tgl2 $bln2, $thn2"
+useradd -e `date -d "$masaaktif days" +"%Y-%m-%d"` -s /bin/false -M $user
+expi="$(chage -l $user | grep "Account expires" | awk -F": " '{print $2}')"
+echo -e "$pw\n$pw\n"|passwd $user &> /dev/null
+hariini=`date -d "0 days" +"%Y-%m-%d"`
+expi=`date -d "$masaaktif days" +"%Y-%m-%d"`
+
+if [ ! -e /etc/ssh ]; then
+  mkdir -p /etc/ssh
+fi
+DATADB=$(cat /etc/ssh/.ssh.db | grep "^###" | grep -w "${user}" | awk '{print $2}')
+if [[ "${DATADB}" != '' ]]; then
+  sed -i "/\b${user}\b/d" /etc/ssh/.ssh.db
+fi
+echo "### ${user} ${pw} ${limit_ip} ${expi}" >>/etc/ssh/.ssh.db
+clear
+
+cat > /var/www/html/ssh-$user.txt <<-END
+
+◇━━━━━━━━━━━━━━━━━◇
+Format SSH OVPN Account
+◇━━━━━━━━━━━━━━━━━◇
+Username         : $user
+Password         : $pw
+◇━━━━━━━━━━━━━━━━━◇
+IP               : $limit_ip
+Host             : $domain
+Port OpenSSH     : 443, 80, 22
+Port Dropbear    : 443, 109
+Port Dropbear WS : 443, 109
+Port SSH UDP     : 1-65535
+Port SSH WS      : 80, 8080, 8081-9999
+Port SSH SSL WS  : 443
+Port SSL/TLS     : 400-900
+Port OVPN WS SSL : 443
+Port OVPN SSL    : 443
+Port OVPN TCP    : 1194
+Port OVPN UDP    : 2200
+BadVPN UDP       : 7100, 7300, 7300
+Location         : $CITY
+◇━━━━━━━━━━━━━━━━━◇
+Aktif Selama     : $masaaktif Hari
+Dibuat Pada      : $tnggl
+Berakhir Pada    : $expe
+===============================
+Payload WSS: GET wss://$domain/ HTTP/1.1[crlf]Host: $domain[crlf]Upgrade: websocket[crlf][crlf] 
+===============================
+OVPN Download : https://$domain:81/
+===============================
+
+END
+clear
+# Membuat output dalam format JSON
+json_output=$(cat <<EOF
+{
+    "username": "$user",
+    "password": "$pw",
+    "limit_ip": "$limit_ip",
+    "domain": "$domain",
+    "ip": "$IP",
+    "isp": "$ISP",
+    "city": "$CITY",
+    "expired": "$expe"
+}
+EOF
+)
+
+# Menampilkan output JSON
+echo "$json_output"
