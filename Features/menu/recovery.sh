@@ -4,12 +4,12 @@ MYIP=$(wget -qO- ipinfo.io/ip)
 clear
 
 # Initialize arrays to store locked accounts for each protocol
-declare -A locked_accounts=(
-    [vmess]=()
-    [ssh]=()
-    [vless]=()
-    [trojan]=()
-    [shadowsocks]=()
+declare -A expired_accounts=(
+    [vmess]=""
+    [ssh]=""
+    [vless]=""
+    [trojan]=""
+    [shadowsocks]=""
 )
 
 function format_message() {

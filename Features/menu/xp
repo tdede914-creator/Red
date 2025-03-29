@@ -5,11 +5,11 @@ clear
 
 # Initialize arrays to store expired accounts for each protocol
 declare -A expired_accounts=(
-    [vmess]=()
-    [ssh]=()
-    [vless]=()
-    [trojan]=()
-    [shadowsocks]=()
+    [vmess]=""
+    [ssh]=""
+    [vless]=""
+    [trojan]=""
+    [shadowsocks]=""
 )
 
 function format_message() {
