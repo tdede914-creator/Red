@@ -3,13 +3,13 @@ now=$(date +"%Y-%m-%d")
 MYIP=$(curl -sS ipinfo.io/ip)
 clear
 
-# Initialize locked accounts array
+# Initialize locked accounts as associative arrays
 declare -A locked_accounts=(
-    [vmess]=""
-    [vless]=""
-    [trojan]=""
-    [shadowsocks]=""
-    [ssh]=""
+    [vmess]=()
+    [vless]=()
+    [trojan]=()
+    [shadowsocks]=()
+    [ssh]=()
 )
 
 function format_html_message() {
@@ -43,7 +43,8 @@ function format_html_message() {
 
 function send_telegram_notification() {
     local protocol=$1
-    local accounts=($2)
+    shift
+    local accounts=("$@")
     
     [[ ${#accounts[@]} -eq 0 ]] && return
 
@@ -60,6 +61,7 @@ function send_telegram_notification() {
         -d parse_mode="html" \
         -d disable_web_page_preview="true" >/dev/null
 }
+
 ##----- Auto Lock Vmess
 data=($(cat /etc/xray/config.json | grep '^###' | cut -d ' ' -f 2 | sort | uniq))
 for user in "${data[@]}"; do
@@ -136,23 +138,30 @@ done
 hariini=$(date +%d-%m-%Y)
 while IFS=: read -r username _ _ _ _ _ _ exp; do
     # Skip root account and already locked accounts
-    if [[ "$username" == "root" ]] || passwd -S "$username" 2>/dev/null | grep -q "locked"; then
-        echo "[SSH] ⏩ $username skipped (root or already locked)"
+    if [[ "$username" == "root" ]]; then
+        echo "[SSH] ⏩ $username skipped (root account)"
         continue
     fi
     
-    if [[ "$exp" -ne "" && "$exp" -le $(date +%s)/86400 ]]; then
+    # Check if account is already locked
+    if passwd -S "$username" 2>/dev/null | grep -q "locked"; then
+        echo "[SSH] ⏩ $username skipped (already locked)"
+        continue
+    fi
+    
+    # Check expiration
+    if [[ "$exp" -ne "" && "$exp" -le $(($(date +%s)/86400)) ]]; then
         passwd -l "$username" >/dev/null 2>&1
         exp_date=$(date -d "@$((exp * 86400))" "+%d-%m-%Y")
         echo "[SSH] 🔒 $username expired on $exp_date"
-        locked_accounts[ssh]+="$username "
+        locked_accounts[ssh]+=("$username")
     fi
-done < <(grep -vE '^root:|!\*' /etc/shadow | awk -F: '{print $1,$8}')
+done < <(grep -vE '^root:|^\*:' /etc/passwd | awk -F: '{print $1,$8}')
 
 # Send notifications
 for protocol in "${!locked_accounts[@]}"; do
-    if [[ -n "${locked_accounts[$protocol]}" ]]; then
-        send_notification "$protocol" "${locked_accounts[$protocol]}"
+    if [[ ${#locked_accounts[$protocol][@]} -gt 0 ]]; then
+        send_telegram_notification "$protocol" "${locked_accounts[$protocol][@]}"
     fi
 done
 

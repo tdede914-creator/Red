@@ -169,7 +169,7 @@ while IFS=: read -r username exp; do
             echo "[SSH] ⚠️ Account $username not found (skipped)"
         fi
     fi
-done < <(awk -F: '$1 != "root" && $8 ~ /^[0-9]+$/ {print $1":"$8}' /etc/shadow)
+done < <(awk -F: '$1 != "root" && $8 ~ /^[0-9]+$/ {print $1":"$8}' /etc/passwd)
 
 # Cleanup temporary file
 rm -f /tmp/expirelist.txt 2>/dev/null

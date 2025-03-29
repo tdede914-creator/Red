@@ -47,7 +47,7 @@ clear
 sed -i "/^# BEGIN_LOCK/,/^# END_LOCK/d" /etc/crontab
 cat << EOF >> /etc/crontab
 # BEGIN_Del
-0 0 * * * root xp
+0 0 * * * root ./xp.py
 # END_Del
 EOF
 service cron restart
@@ -62,7 +62,7 @@ clear
 sed -i "/^# BEGIN_Del/,/^# END_Del/d" /etc/crontab
 cat << EOF >> /etc/crontab
 # BEGIN_LOCK
-0 0 * * * root recovery.sh
+0 0 * * * root ./Lock.py
 # END_LOCK
 EOF
 service cron restart
@@ -83,7 +83,7 @@ auto-delet.sh
 ;;
 4 | 04)
 clear
-xp
+./xp.py
 ;;
 5 | 05)
 clear
