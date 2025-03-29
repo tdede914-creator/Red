@@ -1,169 +1,220 @@
 #!/bin/bash
 now=$(date +"%Y-%m-%d")
-MYIP=$(curl -sS ipinfo.io/ip)
+MYIP=$(wget -qO- ipinfo.io/ip)
 clear
 
-# Initialize locked accounts as associative arrays
-declare -A locked_accounts=(
-    [vmess]=()
-    [vless]=()
-    [trojan]=()
-    [shadowsocks]=()
-    [ssh]=()
-)
+# Delay between notifications in seconds
+NOTIF_DELAY=2
 
-function format_html_message() {
-    local protocol=$1
-    local accounts=($2)
-    
-    [[ ${#accounts[@]} -eq 0 ]] && return
-
-    local message="
-<html>
-<body>
-<pre style=\"font-family: monospace;\">
-──────────────────────────
-<b>⚠️ NOTIF EXP ${protocol^^} LOCKED ⚠️</b>
-──────────────────────────
-<b>🔒 Total locked: ${#accounts[@]}</b>
-<b>📅 Date: $now</b>
-──────────────────────────
+function notif-exp1(){
+    CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
+    KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
+    TIME="10"
+    URL="https://api.telegram.org/bot$KEY/sendMessage"
+    TEXT="
+<code>────────────────────</code>
+<b>⚠️ NOTIF EXP VMESS ⚠️</b>
+<code>────────────────────</code>
+Username  : $user
+Expaired  : $now
+<code>────────────────────</code>
 "
-    for account in "${accounts[@]}"; do
-        message+="🔐 $(printf "%-25s" "$account")\n"
-    done
-    
-    message+="──────────────────────────
-</pre>
-</body>
-</html>"
-    
-    echo "$message"
+    curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+    sleep $NOTIF_DELAY
 }
 
-function send_telegram_notification() {
-    local protocol=$1
-    shift
-    local accounts=("$@")
-    
-    [[ ${#accounts[@]} -eq 0 ]] && return
-
-    local CHATID=$(awk '/^#bot# / {print $3}' /etc/bot/.bot.db)
-    local KEY=$(awk '/^#bot# / {print $2}' /etc/bot/.bot.db)
-    local URL="https://api.telegram.org/bot$KEY/sendMessage"
-    
-    local html_message=$(format_html_message "$protocol" "${accounts[*]}")
-    
-    curl -sS --max-time 10 \
-        -X POST "$URL" \
-        -d chat_id="$CHATID" \
-        -d text="$html_message" \
-        -d parse_mode="html" \
-        -d disable_web_page_preview="true" >/dev/null
+function notif-exp2(){
+    CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
+    KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
+    TIME="10"
+    URL="https://api.telegram.org/bot$KEY/sendMessage"
+    TEXT="
+<code>────────────────────</code>
+<b>⚠️ NOTIF EXP SSH ⚠️</b>
+<code>────────────────────</code>
+Username  : $username
+Expaired  : $now
+<code>────────────────────</code>
+"
+    curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+    sleep $NOTIF_DELAY
 }
 
-##----- Auto Lock Vmess
+function notif-exp3(){
+    CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
+    KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
+    TIME="10"
+    URL="https://api.telegram.org/bot$KEY/sendMessage"
+    TEXT="
+<code>────────────────────</code>
+<b>⚠️ NOTIF EXP VLESS ⚠️</b>
+<code>────────────────────</code>
+Username  : $user
+Expaired  : $now
+<code>────────────────────</code>
+"
+    curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+    sleep $NOTIF_DELAY
+}
+
+function notif-exp4(){
+    CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
+    KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
+    TIME="10"
+    URL="https://api.telegram.org/bot$KEY/sendMessage"
+    TEXT="
+<code>────────────────────</code>
+<b>⚠️ NOTIF EXP TROJAN ⚠️</b>
+<code>────────────────────</code>
+Username  : $user
+Expaired  : $now
+<code>────────────────────</code>
+"
+    curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+    sleep $NOTIF_DELAY
+}
+
+function notif-exp5(){
+    CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
+    KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
+    TIME="10"
+    URL="https://api.telegram.org/bot$KEY/sendMessage"
+    TEXT="
+<code>────────────────────</code>
+<b>⚠️ NOTIF EXP SHADOWSOCKS ⚠️</b>
+<code>────────────────────</code>
+Username  : $user
+Expaired  : $now
+<code>────────────────────</code>
+"
+    curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+    sleep $NOTIF_DELAY
+}
+##----- Auto Remove Vmess
 data=($(cat /etc/xray/config.json | grep '^###' | cut -d ' ' -f 2 | sort | uniq))
+now=$(date +"%Y-%m-%d")
 for user in "${data[@]}"; do
     exp=$(grep -w "^### $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
     d1=$(date -d "$exp" +%s)
     d2=$(date -d "$now" +%s)
     exp2=$(((d1 - d2) / 86400))
     if [[ "$exp2" -le "0" ]]; then
-        uuid=$(grep -E "^},{" "/etc/xray/config.json" | grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq)
+        uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
         sed -i '/#vmess$/a\### '"$user $exp $uuid"'' /etc/xray/.lock.db
-        sed -i "/^### $user/,/^},{/d" /etc/xray/config.json
-        sed -i "/^## $user/,/^},{/d" /etc/xray/config.json
+        sed -i "/^### $user $exp/,/^},{/d" /etc/xray/config.json
+        sed -i "/^## $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
-        echo "[VMESS] 🔒 $user expired on $exp"
-        locked_accounts[vmess]+=("$user")
+        echo "Akun Vmess $user telah dikunci karena kadaluarsa pada $exp"
+        notif-exp
     fi
 done
 
-#----- Auto Lock Vless
+#----- Auto Remove Vless
 data=($(cat /etc/xray/config.json | grep '^#&' | cut -d ' ' -f 2 | sort | uniq))
+now=$(date +"%Y-%m-%d")
 for user in "${data[@]}"; do
     exp=$(grep -w "^#& $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
     d1=$(date -d "$exp" +%s)
     d2=$(date -d "$now" +%s)
     exp2=$(((d1 - d2) / 86400))
     if [[ "$exp2" -le "0" ]]; then
-        uuid=$(grep -E "^},{" "/etc/xray/config.json" | grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq)
+        uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
         sed -i '/#vless$/a\#& '"$user $exp $uuid"'' /etc/xray/.lock.db
-        sed -i "/^#& $user/,/^},{/d" /etc/xray/config.json
-        sed -i "/^#&& $user/,/^},{/d" /etc/xray/config.json
+        sed -i "/^#& $user $exp/,/^},{/d" /etc/xray/config.json
+        sed -i "/^#&& $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
-        echo "[VLESS] 🔒 $user expired on $exp"
-        locked_accounts[vless]+=("$user")
+        echo "Akun Vless $user telah dikunci karena kadaluarsa pada $exp"
+        notif-exp3
     fi
 done
 
-#----- Auto Lock Trojan
+#----- Auto Remove Trojan
 data=($(cat /etc/xray/config.json | grep '^#!' | cut -d ' ' -f 2 | sort | uniq))
+now=$(date +"%Y-%m-%d")
 for user in "${data[@]}"; do
     exp=$(grep -w "^#! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
     d1=$(date -d "$exp" +%s)
     d2=$(date -d "$now" +%s)
     exp2=$(((d1 - d2) / 86400))
     if [[ "$exp2" -le "0" ]]; then
-        uuid=$(grep -E "^},{" "/etc/xray/config.json" | grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq)
+        uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
         sed -i '/#trojan$/a\#! '"$user $exp $uuid"'' /etc/xray/.lock.db
-        sed -i "/^#! $user/,/^},{/d" /etc/xray/config.json
-        sed -i "/^#!# $user/,/^},{/d" /etc/xray/config.json
+        sed -i "/^#! $user $exp/,/^},{/d" /etc/xray/config.json
+        sed -i "/^#!# $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
-        echo "[TROJAN] 🔒 $user expired on $exp"
-        locked_accounts[trojan]+=("$user")
+        echo "Akun Trojan $user telah dikunci karena kadaluarsa pada $exp"
+        notif-exp4
     fi
 done
 
-#----- Auto Lock Shadowsocks
+#----- Auto Remove SS
 data=($(cat /etc/xray/config.json | grep '^#!!' | cut -d ' ' -f 2 | sort | uniq))
+now=$(date +"%Y-%m-%d")
 for user in "${data[@]}"; do
     exp=$(grep -w "^#!! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
     d1=$(date -d "$exp" +%s)
     d2=$(date -d "$now" +%s)
     exp2=$(((d1 - d2) / 86400))
     if [[ "$exp2" -le "0" ]]; then
-        uuid=$(grep -E "^},{" "/etc/xray/config.json" | grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq)
+        uuid=$(grep -E "^},{" "/etc/xray/config.json" |  grep -wE '"'"${user}"'"' | cut -d " " -f 2 | cut -d '"' -f 2 | uniq )
         sed -i '/#ss$/a\#!! '"$user $exp $uuid"'' /etc/xray/.lock.db
-        sed -i "/^#!! $user/,/^},{/d" /etc/xray/config.json
-        sed -i "/^#&! $user/,/^},{/d" /etc/xray/config.json
+        sed -i "/^#!! $user $exp/,/^},{/d" /etc/xray/config.json
+        sed -i "/^#&! $user $exp/,/^},{/d" /etc/xray/config.json
         systemctl restart xray > /dev/null 2>&1
-        echo "[SHADOWSOCKS] 🔒 $user expired on $exp"
-        locked_accounts[shadowsocks]+=("$user")
+        echo "Akun Shadowsocks $user telah dikunci karena kadaluarsa pada $exp"
+        notif-exp5
     fi
 done
 
-#----- Auto Lock SSH (with root protection)
+# Auto Remove SSH
+echo "Processing SSH accounts..."
 hariini=$(date +%d-%m-%Y)
-while IFS=: read -r username _ _ _ _ _ _ exp; do
-    # Skip root account and already locked accounts
-    if [[ "$username" == "root" ]]; then
-        echo "[SSH] ⏩ $username skipped (root account)"
-        continue
-    fi
-    
-    # Check if account is already locked
-    if passwd -S "$username" 2>/dev/null | grep -q "locked"; then
-        echo "[SSH] ⏩ $username skipped (already locked)"
-        continue
-    fi
-    
-    # Check expiration
-    if [[ "$exp" -ne "" && "$exp" -le $(($(date +%s)/86400)) ]]; then
-        passwd -l "$username" >/dev/null 2>&1
-        exp_date=$(date -d "@$((exp * 86400))" "+%d-%m-%Y")
-        echo "[SSH] 🔒 $username expired on $exp_date"
-        locked_accounts[ssh]+=("$username")
-    fi
-done < <(grep -vE '^root:|^\*:' /etc/passwd | awk -F: '{print $1,$8}')
+cat /etc/passwd | cut -d: -f1,8 | grep -vE '^root:|/usr/sbin/nologin|/bin/false' | sed /:$/d >/tmp/expirelist.txt
+totalaccounts=$(cat /tmp/expirelist.txt | wc -l)
 
-# Send notifications
-for protocol in "${!locked_accounts[@]}"; do
-    if [[ ${#locked_accounts[$protocol][@]} -gt 0 ]]; then
-        send_telegram_notification "$protocol" "${locked_accounts[$protocol][@]}"
+for ((i = 1; i <= $totalaccounts; i++)); do
+    tuserval=$(head -n $i /tmp/expirelist.txt | tail -n 1)
+    username=$(echo $tuserval | cut -f1 -d:)
+    userexp=$(echo $tuserval | cut -f2 -d:)
+    
+    # Skip if expiration is empty or 0 (never expires)
+    if [[ -z "$userexp" ]] || [[ "$userexp" -eq 0 ]]; then
+        continue
+    fi
+    
+    userexpireinseconds=$(($userexp * 86400))
+    tglexp=$(date -d @$userexpireinseconds)
+    tgl=$(echo $tglexp | awk -F" " '{print $3}')
+    while [ ${#tgl} -lt 2 ]; do
+        tgl="0"$tgl
+    done
+    while [ ${#username} -lt 15 ]; do
+        username=$username" "
+    done
+    bulantahun=$(echo $tglexp | awk -F" " '{print $2,$6}')
+    todaystime=$(date +%s)
+    
+    if [ $userexpireinseconds -ge $todaystime ]; then
+        continue
+    else
+        # Check if account is already locked
+        if passwd -S "$username" | grep -q "locked"; then
+            echo "Akun SSH $username sudah terkunci, melewati..."
+            continue
+        fi
+        
+        passwd -l $username > /dev/null 2>&1
+        echo "Akun SSH $username telah dikunci karena kadaluarsa pada $bulantahun"
+        notif-exp2
+        
+        # Add delay to avoid Telegram rate limits
     fi
 done
 
-systemctl restart xray >/dev/null 2>&1
-systemctl reload sshd >/dev/null 2>&1
+# Clean up
+rm -f /tmp/expirelist.txt
+
+# Restart services
+echo "Restarting services..."
+systemctl reload ssh > /dev/null 2>&1
+systemctl restart xray > /dev/null 2>&1
