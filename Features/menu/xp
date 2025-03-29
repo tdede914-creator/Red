@@ -3,66 +3,61 @@ now=$(date +"%Y-%m-%d")
 MYIP=$(wget -qO- ipinfo.io/ip)
 clear
 
-# Initialize arrays to store expired accounts for each protocol
-declare -A expired_accounts=(
+declare -A locked_accounts=(
     [vmess]=""
-    [ssh]=""
     [vless]=""
     [trojan]=""
     [shadowsocks]=""
+    [ssh]=""
 )
 
-function format_message() {
+function format_html_message() {
     local protocol=$1
-    shift
-    local accounts=("$@")
+    local accounts=($2)
     
-    if [ ${#accounts[@]} -eq 0 ]; then
-        return
-    fi
-    
-    # Prepare the message with header
-    local message="
-<code>──────────────────────────</code>
-<b>⚠️ NOTIF EXP ${protocol^^} ⚠️</b>
-<code>──────────────────────────</code>
-<b>🔴 Total expired: ${#accounts[@]}</b>
-<b>📅 Date: $now</b>
-<code>──────────────────────────</code>
-"
+    [[ ${#accounts[@]} -eq 0 ]] && return
 
-    # Add each expired account with consistent formatting
+    local message="
+<html>
+<body>
+<pre style=\"font-family: monospace;\">
+──────────────────────────
+<b>⚠️ NOTIF EXP ${protocol^^} LOCKED ⚠️</b>
+──────────────────────────
+<b>🔒 Total locked: ${#accounts[@]}</b>
+<b>📅 Date: $now</b>
+──────────────────────────
+"
     for account in "${accounts[@]}"; do
-        # Format username with consistent width (25 chars)
-        message+="<code>🗑️ $(printf "%-25s" "$account")</code>\n"
+        message+="🔐 $(printf "%-25s" "$account")\n"
     done
     
-    message+="<code>──────────────────────────</code>"
+    message+="──────────────────────────
+</pre>
+</body>
+</html>"
     
     echo "$message"
 }
 
-function send_notification() {
+function send_telegram_notification() {
     local protocol=$1
-    shift
-    local accounts=("$@")
+    local accounts=($2)
     
-    if [ ${#accounts[@]} -eq 0 ]; then
-        return
-    fi
+    [[ ${#accounts[@]} -eq 0 ]] && return
+
+    local CHATID=$(awk '/^#bot# / {print $3}' /etc/bot/.bot.db)
+    local KEY=$(awk '/^#bot# / {print $2}' /etc/bot/.bot.db)
+    local URL="https://api.telegram.org/bot$KEY/sendMessage"
     
-    CHATID=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 3)
-    KEY=$(grep -E "^#bot# " "/etc/bot/.bot.db" | cut -d ' ' -f 2)
-    TIME="10"
-    URL="https://api.telegram.org/bot$KEY/sendMessage"
+    local html_message=$(format_html_message "$protocol" "${accounts[*]}")
     
-    local message=$(format_message "$protocol" "${accounts[@]}")
-    
-    # URL encode the message
-    message=$(echo "$message" | sed 's/%/%25/g' | sed 's/ /%20/g' | sed 's/</%3C/g' | sed 's/>/%3E/g' | sed 's/&/%26/g')
-    
-    # Send the notification
-    curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$message&parse_mode=html" $URL >/dev/null
+    curl -sS --max-time 10 \
+        -X POST "$URL" \
+        -d chat_id="$CHATID" \
+        -d text="$html_message" \
+        -d parse_mode="html" \
+        -d disable_web_page_preview="true" >/dev/null
 }
 
 ##----- Auto Remove Vmess
@@ -145,35 +140,39 @@ for user in "${data[@]}"; do
     fi
 done
 
-#----- Auto Remove SSH
+#----- Auto Remove SSH (with root protection)
 hariini=$(date +%d-%m-%Y)
-cat /etc/shadow | cut -d: -f1,8 | sed /:$/d >/tmp/expirelist.txt
-totalaccounts=$(cat /tmp/expirelist.txt | wc -l)
-for ((i = 1; i <= $totalaccounts; i++)); do
-    tuserval=$(head -n $i /tmp/expirelist.txt | tail -n 1)
-    username=$(echo $tuserval | cut -f1 -d:)
-    userexp=$(echo $tuserval | cut -f2 -d:)
-    userexpireinseconds=$(($userexp * 86400))
-    tglexp=$(date -d @$userexpireinseconds)
-    bulantahun=$(echo $tglexp | awk -F" " '{print $2,$6}')
-    todaystime=$(date +%s)
-    if [ $userexpireinseconds -ge $todaystime ]; then
-        :
-    else
-        userdel --force $username > /dev/null 2>&1
-        sed -i "/^### $username/d" /etc/ssh/.ssh.db
-        rm -f /etc/ssh/$username
-        rm -f /etc/kyt/limit/ssh/ip/$username
-        rm -f /var/www/html/ssh-$username.txt
-        echo "[SSH] 🗑️ $username expired on $bulantahun"
-        expired_accounts[ssh]+=("$username")
+while IFS=: read -r username exp; do
+    # Skip root account and system accounts
+    [[ "$username" == "root" ]] && { echo "[SSH] ⚠️ Skipping root account"; continue; }
+    [[ -z "$exp" ]] && continue  # Skip accounts without expiration
+    
+    # Calculate expiration
+    expire_seconds=$((exp * 86400))
+    current_seconds=$(date +%s)
+    
+    if (( expire_seconds <= current_seconds )); then
+        # Verify account exists before deletion
+        if id "$username" &>/dev/null; then
+            # Remove account and related files
+            userdel --force "$username" 2>/dev/null
+            sed -i "/^### $username/d" /etc/ssh/.ssh.db 2>/dev/null
+            rm -f /etc/ssh/"$username" 2>/dev/null
+            rm -f /etc/kyt/limit/ssh/ip/"$username" 2>/dev/null
+            rm -f /var/www/html/ssh-"$username".txt 2>/dev/null
+            
+            # Format expiration date
+            exp_date=$(date -d "@$expire_seconds" "+%d-%m-%Y")
+            echo "[SSH] 🗑️ Removed $username (expired: $exp_date)"
+            expired_accounts[ssh]+=("$username")
+        else
+            echo "[SSH] ⚠️ Account $username not found (skipped)"
+        fi
     fi
-done
+done < <(awk -F: '$1 != "root" && $8 ~ /^[0-9]+$/ {print $1":"$8}' /etc/shadow)
 
-# Send notifications for each protocol
-for protocol in "${!expired_accounts[@]}"; do
-    send_notification "$protocol" "${expired_accounts[$protocol][@]}"
-done
+# Cleanup temporary file
+rm -f /tmp/expirelist.txt 2>/dev/null
 
 systemctl restart xray
 systemctl reload sshd
