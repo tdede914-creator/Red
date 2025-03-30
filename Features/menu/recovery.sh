@@ -169,7 +169,7 @@ done
 # Auto Remove SSH
 echo "Processing SSH accounts..."
 hariini=$(date +%d-%m-%Y)
-cat /etc/passwd | cut -d: -f1,8 | grep -vE '^root:|/usr/sbin/nologin|/bin/false' | sed /:$/d >/tmp/expirelist.txt
+cat /etc/shadow | cut -d: -f1,8 | grep -vE '^root:|/usr/sbin/nologin|/bin/false' | sed /:$/d >/tmp/expirelist.txt
 totalaccounts=$(cat /tmp/expirelist.txt | wc -l)
 
 for ((i = 1; i <= $totalaccounts; i++)); do
