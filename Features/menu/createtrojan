@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generate Password
-password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
+password=$(cat /proc/sys/kernel/random/uuid)
 # Ambil domain
 domain=$(cat /etc/xray/domain)
 user=$1
@@ -32,7 +32,8 @@ json_output=$(cat <<EOF
   "quota": "$Quota GB",
   "ip_limit": "$iplimit IP",
   "expired": "$expe",
-  "trojan_tls_link": "trojan://$password@$domain:443?security=tls&type=tcp&headerType=none&sni=$domain#$user",
+  "trojan_tls_link": "trojan://$password@$domain:443?path=%2Ftrojan-ws&security=tls&host=$domain&type=ws&sni=$domain#$user",
+  "trojan_nontls_link": "trojan://$password@$domain:80?path=%2Ftrojan-ws&security=none&host=$domain&type=ws#$user",
   "trojan_grpc_link": "trojan://$password@$domain:443?security=tls&type=grpc&serviceName=trojan-grpc&sni=$domain#$user"
 }
 EOF
@@ -80,31 +81,57 @@ Domain : ${domain}
 User Quota : ${Quota} GB
 User Ip : ${iplimit} IP
 Port TLS : 443
+Port none TLS : 80
 Password : ${password}
 Encryption : none
-Security : tls
-Network : tcp
+Security : tls/none
+Network : ws
+Path : /trojan-ws
 ServiceName : trojan-grpc
 =====================
  Link Akun Trojan                   
 =====================
-Link TLS: 
-trojan://$password@$domain:443?security=tls&type=tcp&headerType=none&sni=$domain#$user
+Link WS TLS: 
+trojan://$password@$domain:443?path=%2Ftrojan-ws&security=tls&host=$domain&type=ws&sni=$domain#$user
+=====================
+Link WS none TLS: 
+trojan://$password@$domain:80?path=%2Ftrojan-ws&security=none&host=$domain&type=ws#$user
 =====================
 Link GRPC: 
 trojan://$password@$domain:443?security=tls&type=grpc&serviceName=trojan-grpc&sni=$domain#$user
 =====================
-# Format Trojan TCP TLS
+# Format Trojan WS TLS
 =====================
 proxies:
-  - name: Trojan-$user-TCP TLS
+  - name: Trojan-$user-WS TLS
     server: ${domain}
     port: 443
     type: trojan
     password: ${password}
     skip-cert-verify: true
     sni: ${domain}
-    network: tcp
+    network: ws
+    ws-opts:
+      path: /trojan-ws
+      headers:
+        Host: ${domain}
+    udp: true
+=====================
+# Format Trojan WS Non TLS
+=====================
+proxies:
+  - name: Trojan-$user-WS Non TLS
+    server: ${domain}
+    port: 80
+    type: trojan
+    password: ${password}
+    skip-cert-verify: true
+    sni: ${domain}
+    network: ws
+    ws-opts:
+      path: /trojan-ws
+      headers:
+        Host: ${domain}
     udp: true
 =====================
 # Format Trojan gRPC
