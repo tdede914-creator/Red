@@ -9,7 +9,6 @@ CF_KEY="dc7a32077573505cc082f4be752509a5c5a3e"
 CF_ID="bowowiwendi@gmail.com"
 
 dns="${sub}.${domain}"
-ns="slowdns-vpn.${dns}"
 
 set -euo pipefail
 
@@ -50,18 +49,10 @@ ZONE=$(get_zone_id)
 echo "🔧 Creating A record for ${dns}..."
 create_record A "${dns}" "${IP}"
 
-echo "🔧 Creating A record for ${ns}..."
-create_record A "${ns}" "${IP}"
-
-echo "🔧 Creating NS delegation..."
-create_record NS "${dns}" "${ns}"
-
 # Save domain info
 echo ${dns} > /etc/xray/domain
 echo ${dns} > /root/domain
-echo ${ns} > /root/nsdomain
 
 echo "✅ DNS Setup Complete!"
 echo "   Subdomain: ${dns}"
-echo "   Nameserver: ${ns}"
 echo "   Please wait for DNS propagation (5-15 minutes)"
