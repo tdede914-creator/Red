@@ -50,6 +50,9 @@ echo "🔧 Creating A record for ${dns}..."
 create_record A "${dns}" "${IP}"
 
 # Save domain info
+echo "IP=" >> /var/lib/kyt/ipvps.conf
+echo ${dns} > /etc/xray/scdomain
+echo ${dns} > /etc/v2ray/domain
 echo ${dns} > /etc/xray/domain
 echo ${dns} > /root/domain
 
