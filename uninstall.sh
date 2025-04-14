@@ -19,8 +19,8 @@ remove_packages() {
     apt purge -y nginx haproxy dropbear openvpn fail2ban vnstat rclone msmtp-mta \
     chrony wondershaper iptables-persistent netfilter-persistent \
     php-fpm php-common php-cli php-mysql php-gd php-xml php-curl php-zip php-mbstring \
-    python3-pip libsqlite3-dev socat cron bash-completion software-properties-common \
-    unzip zip apt-transport-https gnupg2 ca-certificates lsb-release debian-archive-keyring \
+    python3-pip libsqlite3-dev socat bash-completion software-properties-common \
+    unzip zip apt-transport-https gnupg2 lsb-release debian-archive-keyring \
     figlet ruby -y
     
     # Hapus semua dependensi yang tidak diperlukan
@@ -41,7 +41,7 @@ remove_config_files() {
     rm -rf /etc/fail2ban
     rm -rf /etc/vnstat
     rm -rf /usr/local/kyt
-    rm -rf /root/.acme.sh  # Sertifikat dihapus untuk mendekati kondisi awal
+    rm -rf /root/.acme.sh  # Sertifikat VPN dihapus
     rm -rf /root/.config/rclone
     rm -rf /var/lib/kyt
     rm -rf /var/log/xray
@@ -77,7 +77,7 @@ remove_swap() {
 # Hapus cron jobs
 remove_cron() {
     echo "Membersihkan cron jobs..."
-    crontab -r  # Hapus semua cron jobs untuk mendekati kondisi awal
+    crontab -r  # Hapus semua cron jobs
     systemctl restart cron
 }
 
@@ -156,13 +156,13 @@ EOF
         netplan apply
     fi
     
-    # Hapus DNS tambahan
+    # Atur DNS ke default yang andal
     if [ -f /etc/resolv.conf ]; then
         echo "nameserver 8.8.8.8" > /etc/resolv.conf
         echo "nameserver 8.8.4.4" >> /etc/resolv.conf
     fi
     
-    # Hapus file hosts yang dimodifikasi
+    # Kembalikan file hosts ke default
     if [ -f /etc/hosts ]; then
         cat > /etc/hosts << EOF
 127.0.0.1 localhost
@@ -186,7 +186,7 @@ clean_residual_files() {
     find / -type d -name "*kyt*" -exec rm -rf {} + 2>/dev/null
 }
 
-# Instal ulang paket inti Ubuntu default
+# Instal ulang paket inti Ubuntu dan perbaiki sertifikat
 install_ubuntu_defaults() {
     echo "Menginstal ulang paket inti Ubuntu..."
     apt update
@@ -214,7 +214,12 @@ install_ubuntu_defaults() {
         locales \
         kbd \
         console-setup
-        
+    
+    # Perbaiki dan perbarui sertifikat CA
+    echo "Memperbaiki konfigurasi sertifikat CA..."
+    apt install --reinstall ca-certificates -y
+    update-ca-certificates
+    
     # Konfigurasi ulang timezone dan locale ke default (contoh: UTC dan en_US.UTF-8)
     echo "Mengatur timezone dan locale..."
     ln -fs /usr/share/zoneinfo/UTC /etc/localtime
