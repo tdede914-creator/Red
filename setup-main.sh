@@ -847,7 +847,6 @@ ins_epro
 ins_restart
 menu
 profile
-bash warp.sh wg6
 enable_services
 restart_system
 }
