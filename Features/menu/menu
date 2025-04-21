@@ -271,9 +271,9 @@ KIRI="\033[1;32m>\033[1;33m>\033[1;31m>\033[1;31m$NC"
 r="\033[1;31m"  #REDTERANG
 a=" ${grenbo}ACCOUNT PREMIUM" 
 echo -e " "
-#figlet  *$username*  | #
+figlet  "Hamid Tunnel" | lolcat
 echo -e " ${z}╭══════════════════════════════════════════════════════════╮${NC}"
-echo -e " ${z}│${AQUOS}       ${KIRI}Welcome To Script Premium t.me/WendiVpn${KANAN}      $NC${z}│$NC"  ## 
+echo -e " ${z}│${AQUOS}       ${KIRI}Welcome To Script Premium t.me/HamidTunneling${KANAN}      $NC${z}│$NC"  ## 
 echo -e " ${z}╭══════════════════════════════════════════════════════════╮${NC}"
 echo -e " ${z}│$NC$r ⇲ $NC$z System OS ${NC}     $z   =   $grenbo $MODEL${NC}"
 echo -e " ${z}│$NC$r ⇲ $NC$z Server RAM ${NC}    $z   =   $grenbo $uram/$RAM MB ${NC}"
