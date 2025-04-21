@@ -36,7 +36,7 @@ SERONLINE=$(uptime -p | cut -d " " -f 2-10000)
 #NS=$(cat /root/nsdomain)
 #PUB=$(cat /etc/slowdns/server.pub)
 Repo="https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/"
-regist="https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip"
+regist="https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip"
 MYIP=$(curl -sS ipv4.icanhazip.com) 
 echo ""
 #####################################
