@@ -43,7 +43,7 @@ echo ""
 function vpsoff(){
 TIME="10"
 CHATID="5162695441"
-KEY="6778508111:AAGmlVVILOA0z4kgLHoA1gD7Hf-maAi9vCQ"
+KEY="7117869623:AAHBmgzOUsmHBjcm5TFir9JmaZ_X7ynMoF4"
 URL="https://api.telegram.org/bot$KEY/sendMessage"
 TEXT="<code>──────────────────────────────────</code>
 <b>⚠️ YOUR SC VPS EXPIRED ⚠️</b>
