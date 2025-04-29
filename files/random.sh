@@ -2,7 +2,7 @@
 apt install -y jq curl
 
 # Configuration
-domain="ssh-prem.xyz"
+domain="sahlstore.biz.id"
 sub=$(</dev/urandom tr -dc a-z0-9 | head -c5)
 IP=$(wget -qO- icanhazip.com)
 CF_KEY="dc7a32077573505cc082f4be752509a5c5a3e"
