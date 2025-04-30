@@ -203,7 +203,7 @@ send_response() {
 validate_auth() {
     local auth_header=$1
     if [[ "$auth_header" != "Bearer $API_KEY" ]]; then
-        send_response "403 Forbidden" "{\"success\": false, \"message\": \"Unauthorized\"}"
+        send_response "401 Unauthorized" "{\"success\": false, \"message\": \"Unauthorized\"}"
         return 1
     fi
     return 0
@@ -216,14 +216,24 @@ process_request() {
     local headers=$3
     local body=$4
 
-    # Validasi metode dan path
+    # Ekstrak header Authorization
+    local auth_header=$(echo "$headers" | grep -i "^Authorization:" | cut -d' ' -f2-)
+
+    # Tangani endpoint /ping
+    if [[ "$method" == "GET" && "$path" == "/ping" ]]; then
+        if ! validate_auth "$auth_header"; then
+            return
+        fi
+        send_response "200 OK" "{\"success\": true, \"message\": \"Server is alive\"}"
+        return
+    fi
+
+    # Tangani endpoint /execute
     if [[ "$method" != "POST" || "$path" != "/execute" ]]; then
         send_response "404 Not Found" "{\"success\": false, \"message\": \"Not found\"}"
         return
     fi
 
-    # Ekstrak header Authorization
-    local auth_header=$(echo "$headers" | grep -i "^Authorization:" | cut -d' ' -f2-)
     if ! validate_auth "$auth_header"; then
         return
     fi
@@ -378,12 +388,16 @@ echo "   - Batas IP: <misalnya 2>"
 echo "   - Kuota: <misalnya 10000 untuk 10GB>"
 echo "   Contoh perintah Telegram:"
 echo "   /addserver server1 $(curl -s ifconfig.me) $API_KEY 50000 2 10000"
-echo "2. Pastikan skrip pendukung (createtrojan.sh, dll.) ada di /root/"
-echo "3. Uji endpoint:"
+echo "2. Uji koneksi ke server untuk memastikan server terhubung:"
+echo "   curl -H \"Authorization: Bearer $API_KEY\" http://$(curl -s ifconfig.me):$PORT/ping"
+echo "   Respons yang diharapkan:"
+echo "   {\"success\": true, \"message\": \"Server is alive\"}"
+echo "3. Pastikan skrip pendukung (createtrojan.sh, dll.) ada di /root/"
+echo "4. Uji endpoint /execute:"
 echo "   curl -X POST http://$(curl -s ifconfig.me):$PORT/execute \\"
 echo "   -H \"Authorization: Bearer $API_KEY\" \\"
 echo "   -H \"Content-Type: application/json\" \\"
 echo "   -d '{\"command\":\"bash $SCRIPTS_DIR/manage_account.sh new trojan testuser \\\"\\\" 30 2 10000 bug.com\"}'"
-echo "4. Periksa log jika ada masalah: cat $LOG_FILE"
+echo "5. Periksa log jika ada masalah: cat $LOG_FILE"
 echo
 print_message warning "CATATAN: Skrip pendukung VPN (createtrojan.sh, dll.) harus disediakan di /root/. Jika belum ada, sesuaikan dengan konfigurasi VPN Anda."
