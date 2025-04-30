@@ -2,14 +2,14 @@
 
 # Skrip untuk mengotomatiskan setup http_server.sh sebagai systemd service
 # Untuk Ubuntu/Debian
-# Versi: 1.1
+# Versi: 1.3
 
 # Variabel
 SCRIPTS_DIR="/root/vpn-scripts"
 LOG_FILE="/var/log/vpn-http-server.log"
 LOG_BACKUP="/var/log/vpn-http-server.log.bak"
 SERVICE_NAME="vpn-http-server"
-PORT=50000
+DOMAIN_FILE="/etc/xray/domain"
 
 # Warna untuk output
 RED='\033[0;31m'
@@ -37,11 +37,15 @@ check_command() {
     fi
 }
 
-# Fungsi untuk memeriksa apakah port sudah digunakan
-check_port() {
-    local port=$1
-    if netstat -tuln | grep -q ":$port "; then
-        print_message error "Port $port sudah digunakan. Silakan ganti port di variabel PORT pada skrip ini."
+# Fungsi untuk memeriksa apakah domain ada
+check_domain() {
+    if [ ! -f "$DOMAIN_FILE" ]; then
+        print_message error "File domain $DOMAIN_FILE tidak ditemukan"
+        exit 1
+    fi
+    DOMAIN=$(cat "$DOMAIN_FILE" | tr -d '[:space:]')
+    if [ -z "$DOMAIN" ]; then
+        print_message error "Domain di $DOMAIN_FILE kosong"
         exit 1
     fi
 }
@@ -73,12 +77,11 @@ cleanup_old_config() {
         print_message success "Direktori $SCRIPTS_DIR dihapus"
     fi
     
-    # Hapus aturan firewall untuk port
-    if ufw status | grep -q "$PORT"; then
-        ufw delete allow $PORT
-        print_message success "Aturan firewall untuk port $PORT dihapus"
+    # Hapus aturan firewall untuk port lama (50000 dan 8080)
+    if ufw status | grep -q "50000"; then
+        ufw delete allow 50000
+        print_message success "Aturan firewall untuk port 50000 dihapus"
     fi
-    # Hapus aturan untuk port lama (8080) jika ada
     if ufw status | grep -q "8080"; then
         ufw delete allow 8080
         print_message success "Aturan firewall untuk port 8080 dihapus"
@@ -117,10 +120,10 @@ for cmd in nc jq uuidgen curl; do
 done
 print_message success "Dependensi terinstall"
 
-# 2. Periksa apakah port tersedia
-print_message info "Memeriksa ketersediaan port $PORT..."
-check_port "$PORT"
-print_message success "Port $PORT tersedia"
+# 2. Periksa domain
+print_message info "Memeriksa domain di $DOMAIN_FILE..."
+check_domain
+print_message success "Domain: $DOMAIN"
 
 # 3. Buat direktori untuk skrip
 print_message info "Membuat direktori $SCRIPTS_DIR..."
@@ -132,7 +135,7 @@ mkdir -p "$SCRIPTS_DIR" || {
 # 4. Salin skrip ke direktori
 print_message info "Menyiapkan skrip..."
 
-# Skrip manage_account.sh
+# Skrip manage_account.sh (tetap sama)
 cat > "$SCRIPTS_DIR/manage_account.sh" << 'EOF'
 #!/bin/bash
 
@@ -256,32 +259,32 @@ echo "API Key: $API_KEY"
 echo "Catat API key ini untuk digunakan di Cloudflare Workers saat menambah server."
 EOF
 
-# Skrip http_server.sh
-cat > "$SCRIPTS_DIR/http_server.sh" << 'EOF'
+# Skrip http_server.sh (menggunakan port 80 dan API key)
+cat > "$SCRIPTS_DIR/http_server.sh" << EOF
 #!/bin/bash
 
 # File API key
 API_KEY_FILE="/root/.api_key"
-PORT=50000
+PORT=80
 
 # Baca API key
-if [[ ! -f "$API_KEY_FILE" ]]; then
-    echo "Error: File API key ($API_KEY_FILE) tidak ditemukan. Jalankan setup_api_key.sh terlebih dahulu."
+if [[ ! -f "\$API_KEY_FILE" ]]; then
+    echo "Error: File API key (\$API_KEY_FILE) tidak ditemukan. Jalankan setup_api_key.sh terlebih dahulu."
     exit 1
 fi
-API_KEY=$(cat "$API_KEY_FILE")
+API_KEY=\$(cat "\$API_KEY_FILE")
 
 # Fungsi untuk mengirim respons HTTP
 send_response() {
-    local status=$1
-    local body=$2
-    echo -e "HTTP/1.1 $status\r\nContent-Type: application/json\r\n\r\n$body"
+    local status=\$1
+    local body=\$2
+    echo -e "HTTP/1.1 \$status\r\nContent-Type: application/json\r\n\r\n\$body"
 }
 
 # Fungsi untuk memvalidasi header Authorization
 validate_auth() {
-    local auth_header=$1
-    if [[ "$auth_header" != "Bearer $API_KEY" ]]; then
+    local auth_header=\$1
+    if [[ "\$auth_header" != "Bearer \$API_KEY" ]]; then
         send_response "401 Unauthorized" "{\"success\": false, \"message\": \"Unauthorized\"}"
         return 1
     fi
@@ -290,17 +293,17 @@ validate_auth() {
 
 # Fungsi untuk memproses request
 process_request() {
-    local method=$1
-    local path=$2
-    local headers=$3
-    local body=$4
+    local method=\$1
+    local path=\$2
+    local headers=\$3
+    local body=\$4
 
     # Ekstrak header Authorization
-    local auth_header=$(echo "$headers" | grep -i "^Authorization:" | cut -d' ' -f2-)
+    local auth_header=\$(echo "\$headers" | grep -i "^Authorization:" | cut -d' ' -f2-)
 
     # Tangani endpoint /ping
-    if [[ "$method" == "GET" && "$path" == "/ping" ]]; then
-        if ! validate_auth "$auth_header"; then
+    if [[ "\$method" == "GET" && "\$path" == "/ping" ]]; then
+        if ! validate_auth "\$auth_header"; then
             return
         fi
         send_response "200 OK" "{\"success\": true, \"message\": \"Server is alive\"}"
@@ -308,36 +311,36 @@ process_request() {
     fi
 
     # Tangani endpoint /execute
-    if [[ "$method" != "POST" || "$path" != "/execute" ]]; then
+    if [[ "\$method" != "POST" || "\$path" != "/execute" ]]; then
         send_response "404 Not Found" "{\"success\": false, \"message\": \"Not found\"}"
         return
     fi
 
-    if ! validate_auth "$auth_header"; then
+    if ! validate_auth "\$auth_header"; then
         return
     fi
 
     # Parse body JSON untuk mendapatkan perintah
-    local command=$(echo "$body" | jq -r '.command // empty')
-    if [[ -z "$command" ]]; then
+    local command=\$(echo "\$body" | jq -r '.command // empty')
+    if [[ -z "\$command" ]]; then
         send_response "400 Bad Request" "{\"success\": false, \"message\": \"Command required\"}"
         return
     fi
 
     # Jalankan perintah
-    local output_file="/tmp/server_output_$$.txt"
-    bash -c "$command" > "$output_file" 2>&1
-    local output=$(cat "$output_file")
-    rm -f "$output_file"
+    local output_file="/tmp/server_output_\$\$.txt"
+    bash -c "\$command" > "\$output_file" 2>&1
+    local output=\$(cat "\$output_file")
+    rm -f "\$output_file"
 
     # Validasi output sebagai JSON
-    if ! echo "$output" | jq . >/dev/null 2>&1; then
+    if ! echo "\$output" | jq . >/dev/null 2>&1; then
         send_response "500 Internal Server Error" "{\"success\": false, \"message\": \"Invalid script output\"}"
         return
     fi
 
     # Kirim output
-    send_response "200 OK" "$output"
+    send_response "200 OK" "\$output"
 }
 
 # Main loop untuk menjalankan server
@@ -345,28 +348,28 @@ while true; do
     # Baca request menggunakan netcat
     {
         read -r request_line
-        method=$(echo "$request_line" | cut -d' ' -f1)
-        path=$(echo "$request_line" | cut -d' ' -f2)
+        method=\$(echo "\$request_line" | cut -d' ' -f1)
+        path=\$(echo "\$request_line" | cut -d' ' -f2)
         headers=""
         body=""
         content_length=0
 
         # Baca header
-        while read -r line && [[ "$line" != $'\r' ]]; do
-            headers+="$line\n"
-            if [[ "$line" =~ Content-Length:\ ([0-9]+) ]]; then
-                content_length=${BASH_REMATCH[1]}
+        while read -r line && [[ "\$line" != \$'\r' ]]; do
+            headers+="\$line\n"
+            if [[ "\$line" =~ Content-Length:\ ([0-9]+) ]]; then
+                content_length=\${BASH_REMATCH[1]}
             fi
         done
 
         # Baca body sesuai Content-Length
-        if [[ $content_length -gt 0 ]]; then
-            body=$(head -c "$content_length")
+        if [[ \$content_length -gt 0 ]]; then
+            body=\$(head -c "\$content_length")
         fi
 
         # Proses request
-        process_request "$method" "$path" "$headers" "$body"
-    } | nc -l -p "$PORT" -q 1
+        process_request "\$method" "\$path" "\$headers" "\$body"
+    } | nc -l -p "\$PORT" -q 1
 done
 EOF
 
@@ -430,11 +433,11 @@ fi
 
 # 7. Konfigurasi firewall
 print_message info "Mengatur firewall..."
-ufw allow $PORT || {
-    print_message error "Gagal membuka port $PORT"
+ufw allow 80 || {
+    print_message error "Gagal membuka port 80"
     exit 1
 }
-ufw status | grep -q "$PORT" && print_message success "Port $PORT terbuka"
+ufw status | grep -q "80" && print_message success "Port 80 terbuka"
 
 # 8. Konfigurasi logging
 print_message info "Mengatur logging..."
@@ -460,23 +463,23 @@ echo
 echo "Instruksi selanjutnya:"
 echo "1. Tambahkan server di Cloudflare Workers atau bot Telegram:"
 echo "   - Nama Server: <pilih nama, misalnya 'server1'>"
-echo "   - Host: <IP VPS Anda, misalnya '$(curl -s ifconfig.me)'>"
+echo "   - Host: $DOMAIN"
 echo "   - API Key: $API_KEY"
 echo "   - Harga: <misalnya 50000 untuk Rp 50.000/30 hari>"
 echo "   - Batas IP: <misalnya 2>"
 echo "   - Kuota: <misalnya 10000 untuk 10GB>"
 echo "   Contoh perintah Telegram:"
-echo "   /addserver server1 $(curl -s ifconfig.me) $API_KEY 50000 2 10000"
-echo "2. Pastikan kode Cloudflare Workers menggunakan port $PORT:"
-echo "   - Ubah endpoint ke 'http://<host>:$PORT/ping' dan 'http://<host>:$PORT/execute'."
-echo "   - Jika Anda menggunakan API key baru, perbarui di panel admin atau Telegram."
+echo "   /addserver server1 $DOMAIN $API_KEY 50000 2 10000"
+echo "2. Pastikan kode Cloudflare Workers menggunakan domain tanpa port:"
+echo "   - Ubah endpoint ke 'http://$DOMAIN/ping' dan 'http://$DOMAIN/execute'."
+echo "   - Gunakan header 'Authorization: Bearer $API_KEY'."
 echo "3. Uji koneksi ke server untuk memastikan server terhubung:"
-echo "   curl -H \"Authorization: Bearer $API_KEY\" http://$(curl -s ifconfig.me):$PORT/ping"
+echo "   curl -H \"Authorization: Bearer $API_KEY\" http://$DOMAIN/ping"
 echo "   Respons yang diharapkan:"
 echo "   {\"success\": true, \"message\": \"Server is alive\"}"
 echo "4. Pastikan skrip pendukung (createtrojan.sh, dll.) ada di /root/"
 echo "5. Uji endpoint /execute:"
-echo "   curl -X POST http://$(curl -s ifconfig.me):$PORT/execute \\"
+echo "   curl -X POST http://$DOMAIN/execute \\"
 echo "   -H \"Authorization: Bearer $API_KEY\" \\"
 echo "   -H \"Content-Type: application/json\" \\"
 echo "   -d '{\"command\":\"bash $SCRIPTS_DIR/manage_account.sh new trojan testuser \\\"\\\" 30 2 10000 bug.com\"}'"
