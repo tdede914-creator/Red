@@ -2,12 +2,14 @@
 
 # Skrip untuk mengotomatiskan setup http_server.sh sebagai systemd service
 # Untuk Ubuntu/Debian
+# Versi: 1.1
 
 # Variabel
 SCRIPTS_DIR="/root/vpn-scripts"
 LOG_FILE="/var/log/vpn-http-server.log"
+LOG_BACKUP="/var/log/vpn-http-server.log.bak"
 SERVICE_NAME="vpn-http-server"
-PORT=8080
+PORT=50000
 
 # Warna untuk output
 RED='\033[0;31m'
@@ -35,6 +37,69 @@ check_command() {
     fi
 }
 
+# Fungsi untuk memeriksa apakah port sudah digunakan
+check_port() {
+    local port=$1
+    if netstat -tuln | grep -q ":$port "; then
+        print_message error "Port $port sudah digunakan. Silakan ganti port di variabel PORT pada skrip ini."
+        exit 1
+    fi
+}
+
+# Fungsi untuk membersihkan konfigurasi lama
+cleanup_old_config() {
+    print_message info "Membersihkan konfigurasi lama..."
+    
+    # Hentikan dan nonaktifkan service
+    if systemctl is-active --quiet $SERVICE_NAME.service; then
+        systemctl stop $SERVICE_NAME.service
+        print_message success "Service $SERVICE_NAME dihentikan"
+    fi
+    if systemctl is-enabled --quiet $SERVICE_NAME.service; then
+        systemctl disable $SERVICE_NAME.service
+        print_message success "Service $SERVICE_NAME dinonaktifkan"
+    fi
+    
+    # Hapus file service
+    if [ -f "/etc/systemd/system/$SERVICE_NAME.service" ]; then
+        rm -f "/etc/systemd/system/$SERVICE_NAME.service"
+        systemctl daemon-reload
+        print_message success "File service $SERVICE_NAME dihapus"
+    fi
+    
+    # Hapus direktori skrip
+    if [ -d "$SCRIPTS_DIR" ]; then
+        rm -rf "$SCRIPTS_DIR"
+        print_message success "Direktori $SCRIPTS_DIR dihapus"
+    fi
+    
+    # Hapus aturan firewall untuk port
+    if ufw status | grep -q "$PORT"; then
+        ufw delete allow $PORT
+        print_message success "Aturan firewall untuk port $PORT dihapus"
+    fi
+    # Hapus aturan untuk port lama (8080) jika ada
+    if ufw status | grep -q "8080"; then
+        ufw delete allow 8080
+        print_message success "Aturan firewall untuk port 8080 dihapus"
+    fi
+    
+    # Hapus file logrotate
+    if [ -f "/etc/logrotate.d/$SERVICE_NAME" ]; then
+        rm -f "/etc/logrotate.d/$SERVICE_NAME"
+        print_message success "File logrotate $SERVICE_NAME dihapus"
+    fi
+    
+    # Cadangkan file log jika ada
+    if [ -f "$LOG_FILE" ]; then
+        mv "$LOG_FILE" "$LOG_BACKUP"
+        print_message success "File log dicadangkan ke $LOG_BACKUP"
+    fi
+}
+
+# Panggil pembersihan konfigurasi lama
+cleanup_old_config
+
 # 1. Update sistem dan install dependensi
 print_message info "Mengupdate sistem dan menginstall dependensi..."
 apt-get update && apt-get upgrade -y || {
@@ -52,14 +117,19 @@ for cmd in nc jq uuidgen curl; do
 done
 print_message success "Dependensi terinstall"
 
-# 2. Buat direktori untuk skrip
+# 2. Periksa apakah port tersedia
+print_message info "Memeriksa ketersediaan port $PORT..."
+check_port "$PORT"
+print_message success "Port $PORT tersedia"
+
+# 3. Buat direktori untuk skrip
 print_message info "Membuat direktori $SCRIPTS_DIR..."
 mkdir -p "$SCRIPTS_DIR" || {
     print_message error "Gagal membuat direktori $SCRIPTS_DIR"
     exit 1
 }
 
-# 3. Salin skrip ke direktori
+# 4. Salin skrip ke direktori
 print_message info "Menyiapkan skrip..."
 
 # Skrip manage_account.sh
@@ -164,6 +234,15 @@ generate_api_key() {
     fi
 }
 
+# Periksa apakah API key sudah ada
+if [ -f "$API_KEY_FILE" ]; then
+    echo "API Key sudah ada di $API_KEY_FILE"
+    API_KEY=$(cat "$API_KEY_FILE")
+    echo "API Key: $API_KEY"
+    echo "Gunakan API key ini di Cloudflare Workers atau bot Telegram."
+    exit 0
+fi
+
 # Generate API key
 API_KEY=$(generate_api_key)
 
@@ -183,7 +262,7 @@ cat > "$SCRIPTS_DIR/http_server.sh" << 'EOF'
 
 # File API key
 API_KEY_FILE="/root/.api_key"
-PORT=8080
+PORT=50000
 
 # Baca API key
 if [[ ! -f "$API_KEY_FILE" ]]; then
@@ -298,16 +377,16 @@ chmod +x "$SCRIPTS_DIR"/*.sh || {
 }
 print_message success "Skrip disiapkan di $SCRIPTS_DIR"
 
-# 4. Generate API key
-print_message info "Mengenerate API key..."
+# 5. Generate atau gunakan API key yang ada
+print_message info "Mengatur API key..."
 bash "$SCRIPTS_DIR/setup_api_key.sh" | tee /tmp/api_key_output.txt || {
-    print_message error "Gagal mengenerate API key"
+    print_message error "Gagal mengatur API key"
     exit 1
 }
 API_KEY=$(grep "API Key:" /tmp/api_key_output.txt | cut -d' ' -f3)
-print_message success "API key digenerate: $API_KEY"
+print_message success "API key: $API_KEY"
 
-# 5. Buat systemd service
+# 6. Buat systemd service
 print_message info "Membuat systemd service..."
 cat > /etc/systemd/system/$SERVICE_NAME.service << EOF
 [Unit]
@@ -349,7 +428,7 @@ else
     exit 1
 fi
 
-# 6. Konfigurasi firewall
+# 7. Konfigurasi firewall
 print_message info "Mengatur firewall..."
 ufw allow $PORT || {
     print_message error "Gagal membuka port $PORT"
@@ -357,7 +436,7 @@ ufw allow $PORT || {
 }
 ufw status | grep -q "$PORT" && print_message success "Port $PORT terbuka"
 
-# 7. Konfigurasi logging
+# 8. Konfigurasi logging
 print_message info "Mengatur logging..."
 touch "$LOG_FILE" && chmod 644 "$LOG_FILE" || {
     print_message error "Gagal membuat file log $LOG_FILE"
@@ -375,7 +454,7 @@ $LOG_FILE {
 EOF
 print_message success "Logging diatur di $LOG_FILE"
 
-# 8. Instruksi untuk pengguna
+# 9. Instruksi untuk pengguna
 print_message success "Setup selesai!"
 echo
 echo "Instruksi selanjutnya:"
@@ -388,16 +467,20 @@ echo "   - Batas IP: <misalnya 2>"
 echo "   - Kuota: <misalnya 10000 untuk 10GB>"
 echo "   Contoh perintah Telegram:"
 echo "   /addserver server1 $(curl -s ifconfig.me) $API_KEY 50000 2 10000"
-echo "2. Uji koneksi ke server untuk memastikan server terhubung:"
+echo "2. Pastikan kode Cloudflare Workers menggunakan port $PORT:"
+echo "   - Ubah endpoint ke 'http://<host>:$PORT/ping' dan 'http://<host>:$PORT/execute'."
+echo "   - Jika Anda menggunakan API key baru, perbarui di panel admin atau Telegram."
+echo "3. Uji koneksi ke server untuk memastikan server terhubung:"
 echo "   curl -H \"Authorization: Bearer $API_KEY\" http://$(curl -s ifconfig.me):$PORT/ping"
 echo "   Respons yang diharapkan:"
 echo "   {\"success\": true, \"message\": \"Server is alive\"}"
-echo "3. Pastikan skrip pendukung (createtrojan.sh, dll.) ada di /root/"
-echo "4. Uji endpoint /execute:"
+echo "4. Pastikan skrip pendukung (createtrojan.sh, dll.) ada di /root/"
+echo "5. Uji endpoint /execute:"
 echo "   curl -X POST http://$(curl -s ifconfig.me):$PORT/execute \\"
 echo "   -H \"Authorization: Bearer $API_KEY\" \\"
 echo "   -H \"Content-Type: application/json\" \\"
 echo "   -d '{\"command\":\"bash $SCRIPTS_DIR/manage_account.sh new trojan testuser \\\"\\\" 30 2 10000 bug.com\"}'"
-echo "5. Periksa log jika ada masalah: cat $LOG_FILE"
+echo "6. Periksa log jika ada masalah: cat $LOG_FILE"
+echo "   - Log lama dicadangkan di: $LOG_BACKUP"
 echo
 print_message warning "CATATAN: Skrip pendukung VPN (createtrojan.sh, dll.) harus disediakan di /root/. Jika belum ada, sesuaikan dengan konfigurasi VPN Anda."
