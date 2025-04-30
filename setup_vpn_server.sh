@@ -2,7 +2,7 @@
 
 # Skrip untuk mengotomatiskan setup http_server.sh sebagai systemd service
 # Untuk Ubuntu/Debian
-# Versi: 1.3
+# Versi: 1.4
 
 # Variabel
 SCRIPTS_DIR="/root/vpn-scripts"
@@ -77,15 +77,13 @@ cleanup_old_config() {
         print_message success "Direktori $SCRIPTS_DIR dihapus"
     fi
     
-    # Hapus aturan firewall untuk port lama (50000 dan 8080)
-    if ufw status | grep -q "50000"; then
-        ufw delete allow 50000
-        print_message success "Aturan firewall untuk port 50000 dihapus"
-    fi
-    if ufw status | grep -q "8080"; then
-        ufw delete allow 8080
-        print_message success "Aturan firewall untuk port 8080 dihapus"
-    fi
+    # Hapus aturan firewall untuk port lama (50000, 8080, 80)
+    for port in 50000 8080 80; do
+        if ufw status | grep -q "$port"; then
+            ufw delete allow $port
+            print_message success "Aturan firewall untuk port $port dihapus"
+        fi
+    done
     
     # Hapus file logrotate
     if [ -f "/etc/logrotate.d/$SERVICE_NAME" ]; then
@@ -109,13 +107,13 @@ apt-get update && apt-get upgrade -y || {
     print_message error "Gagal mengupdate sistem"
     exit 1
 }
-apt-get install -y netcat-openbsd jq uuid-runtime curl || {
+apt-get install -y netcat-openbsd jq uuid-runtime curl nginx || {
     print_message error "Gagal menginstall dependensi"
     exit 1
 }
 
 # Verifikasi dependensi
-for cmd in nc jq uuidgen curl; do
+for cmd in nc jq uuidgen curl nginx; do
     check_command "$cmd"
 done
 print_message success "Dependensi terinstall"
@@ -135,7 +133,7 @@ mkdir -p "$SCRIPTS_DIR" || {
 # 4. Salin skrip ke direktori
 print_message info "Menyiapkan skrip..."
 
-# Skrip manage_account.sh (tetap sama)
+# Skrip manage_account.sh (hapus bug, hapus quota untuk SSH)
 cat > "$SCRIPTS_DIR/manage_account.sh" << 'EOF'
 #!/bin/bash
 
@@ -146,7 +144,6 @@ PASSWORD=$4
 DURATION=$5
 IPLIMIT=$6
 QUOTA=$7
-BUG=$8
 
 # Direktori skrip
 SCRIPT_DIR="/root"
@@ -161,14 +158,13 @@ run_script() {
     local iplimit=$4
     local quota=$5
     local duration=$6
-    local bug=$7
     local output_file="/tmp/account_output_$user.txt"
 
     # Jalankan skrip dengan input yang sesuai
     if [[ "$script" == "createssh" ]]; then
         echo -e "$user\n$password\n$iplimit\n$duration" | bash "$SCRIPT_DIR/$script.sh" > "$output_file" 2>&1
     else
-        echo -e "$user\n$iplimit\n$quota\n$duration\n$bug" | bash "$SCRIPT_DIR/$script.sh" > "$output_file" 2>&1
+        echo -e "$user\n$iplimit\n$quota\n$duration" | bash "$SCRIPT_DIR/$script.sh" > "$output_file" 2>&1
     fi
 
     # Baca output
@@ -200,19 +196,19 @@ case $PROTOCOL in
             echo "{\"success\": false, \"message\": \"Password required for SSH\"}"
             exit 1
         fi
-        run_script "createssh" "$USERNAME" "$PASSWORD" "$IPLIMIT" "$QUOTA" "$DURATION" "$BUG"
+        run_script "createssh" "$USERNAME" "$PASSWORD" "$IPLIMIT" "" "$DURATION"
         ;;
     vmess)
-        run_script "createvmess" "$USERNAME" "" "$IPLIMIT" "$QUOTA" "$DURATION" "$BUG"
+        run_script "createvmess" "$USERNAME" "" "$IPLIMIT" "$QUOTA" "$DURATION"
         ;;
     vless)
-        run_script "createvless" "$USERNAME" "" "$IPLIMIT" "$QUOTA" "$DURATION" "$BUG"
+        run_script "createvless" "$USERNAME" "" "$IPLIMIT" "$QUOTA" "$DURATION"
         ;;
     trojan)
-        run_script "createtrojan" "$USERNAME" "" "$IPLIMIT" "$QUOTA" "$DURATION" "$BUG"
+        run_script "createtrojan" "$USERNAME" "" "$IPLIMIT" "$QUOTA" "$DURATION"
         ;;
     shadowsocks)
-        run_script "createshadowsocks" "$USERNAME" "" "$IPLIMIT" "$QUOTA" "$DURATION" "$BUG"
+        run_script "createshadowsocks" "$USERNAME" "" "$IPLIMIT" "$QUOTA" "$DURATION"
         ;;
     *)
         echo "{\"success\": false, \"message\": \"Unsupported protocol: $PROTOCOL\"}"
@@ -221,7 +217,7 @@ case $PROTOCOL in
 esac
 EOF
 
-# Skrip setup_api_key.sh
+# Skrip setup_api_key.sh (tetap sama)
 cat > "$SCRIPTS_DIR/setup_api_key.sh" << 'EOF'
 #!/bin/bash
 
@@ -259,13 +255,13 @@ echo "API Key: $API_KEY"
 echo "Catat API key ini untuk digunakan di Cloudflare Workers saat menambah server."
 EOF
 
-# Skrip http_server.sh (menggunakan port 80 dan API key)
+# Skrip http_server.sh (menggunakan port 8080 internal, proxy via Nginx untuk HTTPS)
 cat > "$SCRIPTS_DIR/http_server.sh" << EOF
 #!/bin/bash
 
 # File API key
 API_KEY_FILE="/root/.api_key"
-PORT=80
+PORT=8080
 
 # Baca API key
 if [[ ! -f "\$API_KEY_FILE" ]]; then
@@ -373,6 +369,49 @@ while true; do
 done
 EOF
 
+# Konfigurasi Nginx untuk HTTPS
+print_message info "Mengatur konfigurasi Nginx untuk HTTPS..."
+cat > /etc/nginx/sites-available/vpn-http-server << EOF
+server {
+    listen 443 ssl;
+    server_name $DOMAIN;
+
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+
+    location /ping {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+
+    location /execute {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+}
+EOF
+
+# Aktifkan konfigurasi Nginx
+ln -sf /etc/nginx/sites-available/vpn-http-server /etc/nginx/sites-enabled/ || {
+    print_message error "Gagal mengaktifkan konfigurasi Nginx"
+    exit 1
+}
+
+# Uji konfigurasi Nginx
+nginx -t || {
+    print_message error "Konfigurasi Nginx tidak valid"
+    exit 1
+}
+
+# Restart Nginx
+systemctl restart nginx || {
+    print_message error "Gagal merestart Nginx"
+    exit 1
+}
+print_message success "Nginx dikonfigurasi untuk HTTPS"
+
 # Beri izin eksekusi
 chmod +x "$SCRIPTS_DIR"/*.sh || {
     print_message error "Gagal memberikan izin eksekusi pada skrip"
@@ -433,11 +472,11 @@ fi
 
 # 7. Konfigurasi firewall
 print_message info "Mengatur firewall..."
-ufw allow 80 || {
-    print_message error "Gagal membuka port 80"
+ufw allow 443 || {
+    print_message error "Gagal membuka port 443"
     exit 1
 }
-ufw status | grep -q "80" && print_message success "Port 80 terbuka"
+ufw status | grep -q "443" && print_message success "Port 443 terbuka"
 
 # 8. Konfigurasi logging
 print_message info "Mengatur logging..."
@@ -463,27 +502,32 @@ echo
 echo "Instruksi selanjutnya:"
 echo "1. Tambahkan server di Cloudflare Workers atau bot Telegram:"
 echo "   - Nama Server: <pilih nama, misalnya 'server1'>"
-echo "   - Host: $DOMAIN"
+echo "   - Domain Server: $DOMAIN"
 echo "   - API Key: $API_KEY"
 echo "   - Harga: <misalnya 50000 untuk Rp 50.000/30 hari>"
 echo "   - Batas IP: <misalnya 2>"
-echo "   - Kuota: <misalnya 10000 untuk 10GB>"
+echo "   - Kuota (kecuali SSH): <misalnya 10000 untuk 10GB>"
 echo "   Contoh perintah Telegram:"
 echo "   /addserver server1 $DOMAIN $API_KEY 50000 2 10000"
-echo "2. Pastikan kode Cloudflare Workers menggunakan domain tanpa port:"
-echo "   - Ubah endpoint ke 'http://$DOMAIN/ping' dan 'http://$DOMAIN/execute'."
+echo "2. Pastikan kode Cloudflare Workers menggunakan HTTPS:"
+echo "   - Ubah endpoint ke 'https://$DOMAIN/ping' dan 'https://$DOMAIN/execute'."
 echo "   - Gunakan header 'Authorization: Bearer $API_KEY'."
 echo "3. Uji koneksi ke server untuk memastikan server terhubung:"
-echo "   curl -H \"Authorization: Bearer $API_KEY\" http://$DOMAIN/ping"
+echo "   curl -H \"Authorization: Bearer $API_KEY\" https://$DOMAIN/ping"
 echo "   Respons yang diharapkan:"
 echo "   {\"success\": true, \"message\": \"Server is alive\"}"
-echo "4. Pastikan skrip pendukung (createtrojan.sh, dll.) ada di /root/"
+echo "4. Pastikan skrip pendukung (createtrojan.sh, dll.) ada di /root/ dan mendukung parameter tanpa bug dan tanpa quota untuk SSH"
 echo "5. Uji endpoint /execute:"
-echo "   curl -X POST http://$DOMAIN/execute \\"
+echo "   curl -X POST https://$DOMAIN/execute \\"
 echo "   -H \"Authorization: Bearer $API_KEY\" \\"
 echo "   -H \"Content-Type: application/json\" \\"
-echo "   -d '{\"command\":\"bash $SCRIPTS_DIR/manage_account.sh new trojan testuser \\\"\\\" 30 2 10000 bug.com\"}'"
+echo "   -d '{\"command\":\"bash $SCRIPTS_DIR/manage_account.sh new trojan testuser \\\"\\\" 30 2 10000\"}'"
+echo "   Untuk SSH:"
+echo "   curl -X POST https://$DOMAIN/execute \\"
+echo "   -H \"Authorization: Bearer $API_KEY\" \\"
+echo "   -H \"Content-Type: application/json\" \\"
+echo "   -d '{\"command\":\"bash $SCRIPTS_DIR/manage_account.sh new ssh testuser testpass 30 2\\\"}'"
 echo "6. Periksa log jika ada masalah: cat $LOG_FILE"
 echo "   - Log lama dicadangkan di: $LOG_BACKUP"
 echo
-print_message warning "CATATAN: Skrip pendukung VPN (createtrojan.sh, dll.) harus disediakan di /root/. Jika belum ada, sesuaikan dengan konfigurasi VPN Anda."
+print_message warning "CATATAN: Pastikan sertifikat SSL untuk $DOMAIN sudah diatur (misalnya, via Let's Encrypt). Skrip pendukung VPN (createssh.sh, dll.) harus mendukung parameter tanpa bug dan tanpa quota untuk SSH."
