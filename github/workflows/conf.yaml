@@ -1,0 +1,36 @@
+name: Simulasi VPS
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  simulate_vps:
+    runs-on: ubuntu-latest  # Gunakan runner Ubuntu bawaan GitHub
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y docker.io
+
+    - name: Build Docker image
+      run: |
+        docker build -t my-vps-env .
+
+    - name: Run container
+      run: |
+        docker run -d --name vps-simulation -p 8080:8080 my-vps-env
+
+    - name: Run tests in container
+      run: |
+        docker exec vps-simulation bash -c "npm test"
+
+    - name: Stop and remove container
+      run: |
+        docker stop vps-simulation
+        docker rm vps-simulation
