@@ -10,6 +10,7 @@ CYAN='\033[0;36m'
 LIGHT='\033[0;37m'
 ISPVPS=$(cat /etc/xray/isp)
 CITY=$(cat /etc/xray/city)
+RAM=$(free -m | awk '/^Mem:/ {print $2}')
 # ==========================================
 IP=$(curl -sS ipv4.icanhazip.com) || { echo "Gagal mendapatkan IP"; exit 1; }
 domain=$(cat /etc/xray/domain)
@@ -28,6 +29,7 @@ function send_log(){
 📅DATE  :  $date
 📡ISP :  $ISPVPS
 📍LOCATION  :  $CITY
+💾RAM :  $RAM MB
 🔗LINK BACKUP :  $fix
 ◇━━━━━━━━━━━━━━━━◇
 Back to >>> /menu
@@ -88,6 +90,7 @@ DOMAIN      : $domain
 DATE        : $date
 ISP         : $ISPVPS
 LOCATION    : $CITY
+RAM         : $RAM MB
 LINK BACKUP : $link
 ==================================
 "

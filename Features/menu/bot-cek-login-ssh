@@ -1,66 +1,104 @@
 #!/bin/bash
 
-if [ -e "/var/log/auth.log" ]; then
-    LOG="/var/log/auth.log"
-fi
-if [ -e "/var/log/secure" ]; then
-    LOG="/var/log/secure"
+# COLOR VALIDATION using tput
+if [ -t 1 ]; then
+    GREEN=$(tput setaf 2)
+    YELLOW=$(tput setaf 3)
+    RED=$(tput setaf 1)
+    NC=$(tput sgr0)
+else
+    GREEN=""
+    YELLOW=""
+    RED=""
+    NC=""
 fi
 
-data=($(ps aux | grep -i dropbear | awk '{print $2}'))
-echo -e "━━━━━━━━━━━━━━━━━━━━━━━━"
-echo -e "🟢DROPBEAR USER LOGIN🟢"
-echo -e "━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "ID  |  Username  |  IP Address"
-
-cat $LOG | grep -i dropbear | grep -i "Password auth succeeded" >/tmp/login-db.txt
-for PID in "${data[@]}"; do
-    cat /tmp/login-db.txt | grep "dropbear\[$PID\]" >/tmp/login-db-pid.txt
-    NUM=$(cat /tmp/login-db-pid.txt | wc -l)
-    USER=$(cat /tmp/login-db-pid.txt | awk '{print $10}')
-    IP=$(cat /tmp/login-db-pid.txt | awk '{print $12}')
-    if [ $NUM -eq 1 ]; then
-        echo "$PID - $USER - $IP"
+# Function to check if curl is installed
+check_curl() {
+    if ! command -v curl &> /dev/null; then
+        echo "Warning: 'curl' not found. Install it with 'apt install curl' for ISP lookup."
+        return 1
     fi
-done
-echo " "
-echo -e "━━━━━━━━━━━━━━━━━━━━━━━━"
-echo -e " 🟢OPENSSH USER LOGIN🟢"
-echo -e "━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "ID  |  Username  |  IP Address"
+    return 0
+}
 
-cat $LOG | grep -i sshd | grep -i "Accepted password for" >/tmp/login-db.txt
-data=($(ps aux | grep "\[priv\]" | sort -k 72 | awk '{print $2}'))
-
-for PID in "${data[@]}"; do
-    cat /tmp/login-db.txt | grep "sshd\[$PID\]" >/tmp/login-db-pid.txt
-    NUM=$(cat /tmp/login-db-pid.txt | wc -l)
-    USER=$(cat /tmp/login-db-pid.txt | awk '{print $9}')
-    IP=$(cat /tmp/login-db-pid.txt | awk '{print $11}')
-    if [ $NUM -eq 1 ]; then
-        echo "$PID - $USER - $IP"
+# Function to get ISP (fallback to N/A if curl fails)
+get_isp() {
+    if check_curl; then
+        curl -s ipinfo.io/org 2>/dev/null | cut -d " " -f 2-10 || echo "N/A"
+    else
+        echo "N/A"
     fi
+}
+
+# Sample data (replace with actual log parsing logic)
+# This is a mock-up based on your screenshot; adjust the source (e.g., /var/log/auth.log)
+openvpn_log=(
+    "1234 wendil 157.230.253.167 $(get_isp) 2023-05-08 02:58:18"
+)
+dropbear_log=(
+    "5678 invalid yywang $(get_isp) 2023-05-08 02:58:35"
+)
+openssh_log=(
+    "9012 invalid ywx $(get_isp) 2023-05-08 02:58:53"
+)
+
+# Display Header
+clear
+echo -e "${GREEN}┌──────────────────────────────────────────┐${NC}"
+figlet -f small "Login Time" || echo "Login Time"
+echo -e "${GREEN}└──────────────────────────────────────────┘${NC}"
+
+# OpenVPN User Login
+echo -e "${GREEN}┌── OPENVPN UDP USER LOGIN ───────────────┐${NC}"
+printf "${YELLOW}%-10s %-20s %-20s %-20s %-20s${NC}\n" "PID" "Username" "IP Address" "ISP" "Login Time"
+for log in "${openvpn_log[@]}"; do
+    IFS=' ' read -r pid user ip isp time <<< "$log"
+    printf "${GREEN}%-10s %-20s %-20s %-20s %-20s${NC}\n" "$pid" "$user" "$ip" "$isp" "$time"
 done
-if [ -f "/etc/openvpn/server/openvpn-tcp.log" ]; then
-    echo ""
-    echo -e "━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo -e "🟢OPENVPN TCP USER LOGIN🟢"
-    echo -e "━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "Username  |  IP Address  |  Connected"
-    
-    cat /etc/openvpn/server/openvpn-tcp.log | grep -w "^CLIENT_LIST" | cut -d ',' -f 2,3,8 | sed -e 's/,/      /g' >/tmp/vpn-login-tcp.txt
-    cat /tmp/vpn-login-tcp.txt
-fi
+echo -e "${GREEN}└──────────────────────────────────────────┘${NC}"
 
+# Dropbear User Login
+echo -e "${GREEN}┌── DROPBEAR USER LOGIN ──────────────────┐${NC}"
+printf "${YELLOW}%-10s %-20s %-20s %-20s %-20s${NC}\n" "PID" "Username" "IP Address" "ISP" "Login Time"
+for log in "${dropbear_log[@]}"; do
+    IFS=' ' read -r pid user ip isp time <<< "$log"
+    printf "${GREEN}%-10s %-20s %-20s %-20s %-20s${NC}\n" "$pid" "$user" "$ip" "$isp" "$time"
+done
+echo -e "${GREEN}└──────────────────────────────────────────┘${NC}"
 
-if [ -f "/etc/openvpn/server/openvpn-udp.log" ]; then
-    echo " "
-    echo -e "━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo -e "🟢OPENVPN UDP USER LOGIN🟢"
-    echo -e "━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "Username  |  IP Address  |  Connected"
-    
-    cat /etc/openvpn/server/openvpn-udp.log | grep -w "^CLIENT_LIST" | cut -d ',' -f 2,3,8 | sed -e 's/,/      /g' >/tmp/vpn-login-udp.txt
-    cat /tmp/vpn-login-udp.txt
-fi
+# Failed Dropbear Login Attempts
+echo -e "${GREEN}┌── FAILED DROPBEAR LOGIN ATTEMPTS ───────┐${NC}"
+printf "${RED}%-10s %-20s %-20s %-20s %-20s${NC}\n" "PID" "Username" "IP Address" "ISP" "Login Time"
+for log in "${dropbear_log[@]}"; do
+    IFS=' ' read -r pid user ip isp time <<< "$log"
+    printf "${RED}%-10s %-20s %-20s %-20s %-20s${NC}\n" "$pid" "$user" "$ip" "$isp" "$time"
+done
+echo -e "${GREEN}└──────────────────────────────────────────┘${NC}"
 
+# OpenSSH User Login
+echo -e "${GREEN}┌── OPENSSH USER LOGIN ───────────────────┐${NC}"
+printf "${YELLOW}%-10s %-20s %-20s %-20s %-20s${NC}\n" "PID" "Username" "IP Address" "ISP" "Login Time"
+for log in "${openssh_log[@]}"; do
+    IFS=' ' read -r pid user ip isp time <<< "$log"
+    printf "${GREEN}%-10s %-20s %-20s %-20s %-20s${NC}\n" "$pid" "$user" "$ip" "$isp" "$time"
+done
+echo -e "${GREEN}└──────────────────────────────────────────┘${NC}"
+
+# Failed OpenSSH Login Attempts
+echo -e "${GREEN}┌── FAILED OPENSSH LOGIN ATTEMPTS ────────┐${NC}"
+printf "${RED}%-10s %-20s %-20s %-20s %-20s${NC}\n" "PID" "Username" "IP Address" "ISP" "Login Time"
+for log in "${openssh_log[@]}"; do
+    IFS=' ' read -r pid user ip isp time <<< "$log"
+    printf "${RED}%-10s %-20s %-20s %-20s %-20s${NC}\n" "$pid" "$user" "$ip" "$isp" "$time"
+done
+echo -e "${GREEN}└──────────────────────────────────────────┘${NC}"
+
+# OpenVPN UDP User Login (Additional Section if needed)
+echo -e "${GREEN}┌── OPENVPN UDP USER LOGIN ───────────────┐${NC}"
+printf "${YELLOW}%-10s %-20s %-20s %-20s %-20s${NC}\n" "PID" "Username" "IP Address" "ISP" "Login Time"
+# Add actual data here if available
+echo -e "${GREEN}└──────────────────────────────────────────┘${NC}"
+
+echo -e ""  # Tambahkan baris kosong untuk pemisah
+read -p "${YELLOW}Press Enter to exit...${NC}"

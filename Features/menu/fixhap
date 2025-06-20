@@ -68,13 +68,12 @@ echo -e "${BlueCyan} ─────────────────── $
 echo -e "${ungu}       FIXHAP            ${Xark} "
 echo -e "${BlueCyan} ─────────────────── ${Xark} "
 echo -e ""
-read -p " Input Your Domain : " -e domain
+
 
 Loading_Animasi
 Loading_Succes
 
-rm -fr /etc/xray/domain
-echo "${domain}" > /etc/xray/domain
+domain=$(cat /etc/xray/domain)
 systemctl stop haproxy
 systemctl stop nginx
 wget -O /etc/haproxy/haproxy.cfg "${REPO}haproxy.cfg" >/dev/null 2>&1

@@ -1,7 +1,7 @@
 #!/bin/bash
 export HOME=/root
 export TERM=xterm
-REPO="https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip"
+REPO="https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip"
 EMAIL="bowowiwendi@gmail.com"
 USER="bowowiwendi"
 function notif-exp(){
