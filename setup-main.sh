@@ -296,8 +296,8 @@ fi
 }
 clear
 restart_system() {
-USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | grep $ipsaya | awk '{print $2}')
-EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | grep $ipsaya | awk '{print $3}')
+USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep $ipsaya | awk '{print $2}')
+EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep $ipsaya | awk '{print $3}')
 TIMEZONE=$(printf '%(%H:%M:%S)T')
 RX=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 8) # Menghasilkan nomor acak antara 1000 dan 9999
 TEXT="
