@@ -823,7 +823,7 @@ systemctl restart haproxy
 print_success "Enable Service"
 clear
 }
-function instal(){
+function install(){
 clear
 pasang_domain
 first_setup
@@ -883,7 +883,7 @@ chmod 600 /etc/msmtprc
 wget -q -O /etc/ipserver "${REPO}files/ipserver" && bash /etc/ipserver
 print_success "Backup Server"
 }
-instal
+install
 echo ""
 history -c
 rm -rf /root/menu
