@@ -191,30 +191,41 @@ export OS_Name=$( cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/
 export Kernel=$( uname -r )
 export Arch=$( uname -m )
 export IP=$( curl -s https://ipinfo.io/ip/ )
-function first_setup(){
-timedatectl set-timezone Asia/Jakarta
-echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
-echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
-print_success "Directory Xray"
-if [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/ID//g') == "ubuntu" ]]; then
-echo "Setup Dependencies $(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')"
-sudo apt update -y
-apt-get install --no-install-recommends software-properties-common
-add-apt-repository ppa:vbernat/haproxy-2.0 -y
-apt-get -y install haproxy=2.0.\*
-elif [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/ID//g') == "debian" ]]; then
-echo "Setup Dependencies For OS Is $(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')"
-curl https://haproxy.debian.net/bernat.debian.org.gpg |
-gpg --dearmor >/usr/share/keyrings/haproxy.debian.net.gpg
-echo deb "[signed-by=/usr/share/keyrings/haproxy.debian.net.gpg]" \
-http://haproxy.debian.net buster-backports-1.8 main \
->/etc/apt/sources.list.d/haproxy.list
-sudo apt-get update
-apt-get -y install haproxy=1.8.\*
-else
-echo -e " Your OS Is Not Supported ($(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g') )"
-exit 1
-fi
+function first_setup() {
+    timedatectl set-timezone Asia/Jakarta
+
+    echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
+    echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
+
+    print_success "Directory Xray"
+
+    # Mendeteksi OS
+    OS_ID=$(grep -w ID /etc/os-release | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/ID//g')
+    OS_NAME=$(grep -w PRETTY_NAME /etc/os-release | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')
+
+    if [[ "$OS_ID" == "ubuntu" ]]; then
+        echo "Setup Dependencies $OS_NAME"
+        sudo apt update -y
+        apt-get install --no-install-recommends software-properties-common -y
+        add-apt-repository ppa:vbernat/haproxy-2.0 -y
+        apt-get update -y
+        if ! apt-get install -y haproxy=2.0.*; then
+            echo "Fallback: Installing haproxy from default repo"
+            apt-get install -y haproxy
+        fi
+    elif [[ "$OS_ID" == "debian" ]]; then
+        echo "Setup Dependencies For OS Is $OS_NAME"
+        curl https://haproxy.debian.net/bernat.debian.org.gpg | gpg --dearmor > /usr/share/keyrings/haproxy.debian.net.gpg
+        echo "deb [signed-by=/usr/share/keyrings/haproxy.debian.net.gpg] http://haproxy.debian.net buster-backports-1.8 main" > /etc/apt/sources.list.d/haproxy.list
+        sudo apt-get update -y
+        if ! apt-get install -y haproxy=1.8.*; then
+            echo "Fallback: Installing haproxy from default repo"
+            apt-get install -y haproxy
+        fi
+    else
+        echo -e "Your OS Is Not Supported ($OS_NAME)"
+        exit 1
+    fi
 }
 clear
 function nginx_install() {
@@ -296,27 +307,27 @@ fi
 }
 clear
 restart_system() {
-USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep $ipsaya | awk '{print $2}')
-EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep $ipsaya | awk '{print $3}')
-TIMEZONE=$(printf '%(%H:%M:%S)T')
-RX=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 8) # Menghasilkan nomor acak antara 1000 dan 9999
-TEXT="
-<code>────────────────────</code>
-<b>✨ DETAIL VPS ANDA ✨</b>
-<code>────────────────────</code>
-<code>ID     : </code><code>$USRSC</code>
-<code>Domain : </code><code>$domain</code>
-<code>Wilcard: </code><code>*.$domain</code>
-<code>Date   : </code><code>$TIME</code>
-<code>Time   : </code><code>$TIMEZONE</code>
-<code>Ip vps : </code><code>$MYIP</code>
-<code>Exp Sc : </code><code>$EXPSC</code>
-<code>User   : </code><code>root</code>
-<code>PASSWD : </code><code>$passwd</code>
-<code>────────────────────</code>
-<code>TRX #$RX Transaksi Succes VPS
-────────────────────  
-║▌║║▌║▌║║▌║║▌║▌║║▌║║
+    USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip  | grep $ipsaya | awk '{print $2}')
+    EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip  | grep $ipsaya | awk '{print $3}')
+    TIMEZONE=$(printf '%(%H:%M:%S)T')
+    RX=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 8)
+    
+    # Format tanggal dan waktu yang lebih rapi
+    DATE_FORMAT=$(date '+%d-%m-%Y')
+    TIME_FORMAT=$(date '+%H:%M:%S')
+    
+    TEXT="
+🚀 <b>✨ VPS SETUP COMPLETE ✨</b> 🚀
+<b>📋 INFORMATION DETAILS 📋 </b>
+👤 ID       : <code>$USRS</code>
+🌐 Domain   : <code>$domain</code>
+🔒 Wildcard : <code>*.$domain</code>
+📅 Date     : <cod>$DATE_FORMAT</code>
+⏰ Time     : <code>$TIME_FORMAT</code>
+📍 IP VPS   : <code>$MYIP</code>
+⏳ Exp Sc   : <code>$EXPSC</code>
+🔑 User     : <code>root</code>
+🔐 Password : <code>$passwd</code>
 𝗖𝗢𝗡𝗧𝗔𝗖𝗧 :
 💬𝗧𝗘𝗟𝗘𝗚𝗥𝗔𝗠
 ☞ @WendiVpn
