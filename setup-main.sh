@@ -542,102 +542,76 @@ print_success "Password SSH"
 function udp_mini(){
 clear
 print_install "Memasang Service limit Quota"
-
-# Perbaiki URL wget untuk limit.sh dan tambahkan penanganan error
-if wget -O /root/limit.sh "${REPO}files/limit.sh" && chmod +x /root/limit.sh && /root/limit.sh; then
-    echo "limit.sh executed successfully."
-else
-    echo "WARNING: limit.sh failed or caused an issue. This might be related to session problems."
-    # Opsional: Keluar jika ini kritis
-    # exit 1
-fi
-
+wget raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/limit.sh && chmod +x limit.sh && ./limit.sh
 cd
 wget -q -O /usr/bin/limit-ip "${REPO}files/limit-ip"
-# Perbaiki chmod agar tidak memberi execute pada semua file di /usr/bin
-chmod +x /usr/bin/limit-ip
-# chmod +x /usr/bin/* # Baris ini berpotensi bahaya dan dihapus
+chmod +x /usr/bin/*
 cd /usr/bin
-sed -i 's/\r//' limit-ip # Hapus karakter carriage return jika ada
+sed -i 's/\r//' limit-ip
 cd
-
-# Perbaiki service unit systemd (ganti ProjectAfter menjadi After, tambah Type)
+clear
 cat >/etc/systemd/system/vmip.service << EOF
 [Unit]
-Description=My VMIP Service
-After=network.target
-
+Description=My
+ProjectAfter=network.target
 [Service]
-Type=simple
 WorkingDirectory=/root
 ExecStart=/usr/bin/files-ip vmip
 Restart=always
-RestartSec=5
-
 [Install]
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
-systemctl restart vmip 2>/dev/null
+systemctl restart vmip
 systemctl enable vmip
-
 cat >/etc/systemd/system/vlip.service << EOF
 [Unit]
-Description=My VLIP Service
-After=network.target
-
+Description=My
+ProjectAfter=network.target
 [Service]
-Type=simple
 WorkingDirectory=/root
 ExecStart=/usr/bin/files-ip vlip
 Restart=always
-RestartSec=5
-
 [Install]
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
-systemctl restart vlip 2>/dev/null
+systemctl restart vlip
 systemctl enable vlip
-
 cat >/etc/systemd/system/trip.service << EOF
 [Unit]
-Description=My TRIP Service
-After=network.target
-
+Description=My
+ProjectAfter=network.target
 [Service]
-Type=simple
 WorkingDirectory=/root
 ExecStart=/usr/bin/files-ip trip
 Restart=always
-RestartSec=5
-
 [Install]
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
-systemctl restart trip 2>/dev/null
+systemctl restart trip
 systemctl enable trip
-
 mkdir -p /usr/local/kyt/
 wget -q -O /usr/local/kyt/udp-mini "${REPO}files/udp-mini"
 chmod +x /usr/local/kyt/udp-mini
-
-# Perbaiki service unit untuk udp-mini (ganti ProjectAfter menjadi After)
-for i in 1 2 3; do
-    wget -q -O /etc/systemd/system/udp-mini-${i}.service "${REPO}files/udp-mini-${i}.service"
-    # Opsional: Periksa dan perbaiki isi file service jika perlu
-    # sed -i 's/ProjectAfter/After/g' /etc/systemd/system/udp-mini-${i}.service
-
-    systemctl disable "udp-mini-${i}" 2>/dev/null
-    systemctl stop "udp-mini-${i}" 2>/dev/null
-    systemctl enable "udp-mini-${i}"
-    systemctl start "udp-mini-${i}"
-done
-
+wget -q -O /etc/systemd/system/udp-mini-1.service "${REPO}files/udp-mini-1.service"
+wget -q -O /etc/systemd/system/udp-mini-2.service "${REPO}files/udp-mini-2.service"
+wget -q -O /etc/systemd/system/udp-mini-3.service "${REPO}files/udp-mini-3.service"
+systemctl disable udp-mini-1
+systemctl stop udp-mini-1
+systemctl enable udp-mini-1
+systemctl start udp-mini-1
+systemctl disable udp-mini-2
+systemctl stop udp-mini-2
+systemctl enable udp-mini-2
+systemctl start udp-mini-2
+systemctl disable udp-mini-3
+systemctl stop udp-mini-3
+systemctl enable udp-mini-3
+systemctl start udp-mini-3
 print_success "files Quota Service"
 }
-# --- Akhir fungsi udp_mini yang dimodifikasi ---
 function ssh_slow(){
 clear
 print_install "Memasang modul SlowDNS Server"
