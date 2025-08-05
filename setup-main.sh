@@ -191,6 +191,8 @@ export OS_Name=$( cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/
 export Kernel=$( uname -r )
 export Arch=$( uname -m )
 export IP=$( curl -s https://ipinfo.io/ip/ )
+# ... (bagian sebelumnya tetap sama) ...
+
 function first_setup() {
     timedatectl set-timezone Asia/Jakarta
 
@@ -206,26 +208,32 @@ function first_setup() {
     if [[ "$OS_ID" == "ubuntu" ]]; then
         echo "Setup Dependencies $OS_NAME"
         sudo apt update -y
-        apt-get install --no-install-recommends software-properties-common -y
-        add-apt-repository ppa:vbernat/haproxy-2.0 -y
-        apt-get update -y
-        if ! apt-get install -y haproxy=2.0.*; then
-            echo "Fallback: Installing haproxy from default repo"
-            apt-get install -y haproxy
-        fi
+        # HAPUS baris yang menambahkan PPA
+        # apt-get install --no-install-recommends software-properties-common -y
+        # add-apt-repository ppa:vbernat/haproxy-2.0 -y
+        # apt-get update -y
+        
+        # Langsung install haproxy dari repo default
+        echo "Installing haproxy from default repo"
+        apt-get install -y haproxy
+        
     elif [[ "$OS_ID" == "debian" ]]; then
         echo "Setup Dependencies For OS Is $OS_NAME"
-        curl https://haproxy.debian.net/bernat.debian.org.gpg | gpg --dearmor > /usr/share/keyrings/haproxy.debian.net.gpg
-        echo "deb [signed-by=/usr/share/keyrings/haproxy.debian.net.gpg] http://haproxy.debian.net buster-backports-1.8 main" > /etc/apt/sources.list.d/haproxy.list
-        sudo apt-get update -y
-        if ! apt-get install -y haproxy=1.8.*; then
-            echo "Fallback: Installing haproxy from default repo"
-            apt-get install -y haproxy
-        fi
+        # HAPUS bagian yang menambahkan repository eksternal khusus HAProxy
+        # curl https://haproxy.debian.net/bernat.debian.org.gpg  | gpg --dearmor > /usr/share/keyrings/haproxy.debian.net.gpg
+        # echo "deb [signed-by=/usr/share/keyrings/haproxy.debian.net.gpg] http://haproxy.debian.net buster-backports-1.8 main" > /etc/apt/sources.list.d/haproxy.list
+        # sudo apt-get update -y
+        
+        # Langsung install haproxy dari repo default
+        echo "Installing haproxy from default repo"
+        apt-get install -y haproxy
+        
     else
         echo -e "Your OS Is Not Supported ($OS_NAME)"
         exit 1
     fi
+    
+    # ... (bagian selanjutnya tetap sama) ...
 }
 clear
 function nginx_install() {
