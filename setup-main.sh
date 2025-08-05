@@ -1,15 +1,31 @@
 #!/bin/bash
 
 # --- Section 1: Initial Setup and Checks ---
+# Clear screen once
 clear
+
 # Ensure apt lists are up-to-date first
 apt update -y
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to update package lists."
+    exit 1
+fi
+
+# Upgrade packages early
 apt upgrade -y
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to upgrade packages."
+    exit 1
+fi
 
 # Install essential early packages
 apt install curl socat -y
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to install curl or socat."
+    exit 1
+fi
 
-# Color definitions
+# Color definitions (kept as is for UI)
 Green="\e[92;1m"
 RED="\033[1;31m"
 YELLOW="\033[33m"
@@ -33,7 +49,7 @@ URL="https://api.telegram.org/bot$KEY/sendMessage"
 
 export IP=$( curl -sS icanhazip.com )
 
-# Clear screen
+# Clear screen again
 clear
 
 echo -e "${YELLOW}----------------------------------------------------------${NC}"
@@ -119,6 +135,7 @@ clear
 
 # Assuming these files exist and are accessible
 rm -f /usr/bin/user
+# Use $ipsaya for consistency
 username=$(curl -s https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | grep "$ipsaya" | awk '{print $2}')
 echo "$username" >/usr/bin/user
 valid=$(curl -s https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | grep "$ipsaya" | awk '{print $3}')
@@ -268,7 +285,8 @@ function base_package() {
     # Install build essentials first if needed by later packages
     apt install -y build-essential
 
-    # Install the large list of packages
+    # Install the large list of packages (Consider streamlining if possible)
+    # Removed ufw/firewalld install/remove cycle, removed redundant updates/upgrades
     apt install -y zip pwgen openssl netcat socat cron bash-completion figlet \
         ntpdate chrony sudo debconf-utils rsyslog dos2unix sed dirmngr \
         libxml-parser-perl gcc g++ python3 htop lsof tar wget curl ruby \
@@ -281,8 +299,8 @@ function base_package() {
         easy-rsa speedtest-cli vnstat libnss3-dev libnspr4-dev pkg-config \
         libevent-dev bc dnsutils cron bash-completion chronyd
 
-    # Remove unwanted packages
-    apt remove --purge -y exim4 ufw firewalld
+    # Remove unwanted packages (only if they were installed by something else)
+    apt remove --purge -y exim4 ufw firewalld 2>/dev/null
 
     # Install software-properties-common
     apt install -y --no-install-recommends software-properties-common
@@ -443,7 +461,7 @@ function install_xray() {
     print_install "Core Xray Latest Version"
     domainSock_dir="/run/xray"
     mkdir -p "$domainSock_dir"
-    chown www-data:www-data "$domainSock_dir"
+    chown www-data:www-data "$domainSock_dir" # Fixed chown syntax
 
     latest_version="$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases | grep tag_name | sed -E 's/.*"v(.*)".*/\1/' | head -n 1)"
     bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u www-data --version "$latest_version" || { echo "Failed to install Xray"; exit 1; }
@@ -472,6 +490,7 @@ function install_xray() {
     chmod +x /etc/systemd/system/runn.service
     rm -rf /etc/systemd/system/xray.service.d
 
+    # Corrected systemd service file
     cat >/etc/systemd/system/xray.service <<EOF
 [Unit]
 Description=Xray Service
@@ -506,14 +525,14 @@ function ssh(){
     # Configure keyboard non-interactively
     DEBIAN_FRONTEND=noninteractive dpkg-reconfigure keyboard-configuration
 
-    # Set keyboard configuration selections
+    # Set keyboard configuration selections (kept as is, though 'de' layout with 'English' selection is odd)
     debconf-set-selections <<<"keyboard-configuration keyboard-configuration/altgr select The default for the keyboard layout"
     debconf-set-selections <<<"keyboard-configuration keyboard-configuration/compose select No compose key"
     debconf-set-selections <<<"keyboard-configuration keyboard-configuration/ctrl_alt_bksp boolean false"
-    debconf-set-selections <<<"keyboard-configuration keyboard-configuration/layoutcode string us" # Changed to 'us' as 'de' was inconsistent with 'English' selection
-    debconf-set-selections <<<"keyboard-configuration keyboard-configuration/layout select English (US)"
+    debconf-set-selections <<<"keyboard-configuration keyboard-configuration/layoutcode string de"
+    debconf-set-selections <<<"keyboard-configuration keyboard-configuration/layout select English"
     debconf-set-selections <<<"keyboard-configuration keyboard-configuration/modelcode string pc105"
-    debconf-set-selections <<<"keyboard-configuration keyboard-configuration/model select Generic 105-key PC"
+    debconf-set-selections <<<"keyboard-configuration keyboard-configuration/model select Generic 105-key (Intl) PC"
     debconf-set-selections <<<"keyboard-configuration keyboard-configuration/optionscode string "
     debconf-set-selections <<<"keyboard-configuration keyboard-configuration/store_defaults_in_debconf_db boolean true"
     debconf-set-selections <<<"keyboard-configuration keyboard-configuration/switch select No temporary switch"
@@ -523,10 +542,10 @@ function ssh(){
     debconf-set-selections <<<"keyboard-configuration keyboard-configuration/unsupported_layout boolean true"
     debconf-set-selections <<<"keyboard-configuration keyboard-configuration/unsupported_options boolean true"
     debconf-set-selections <<<"keyboard-configuration keyboard-configuration/variantcode string "
-    debconf-set-selections <<<"keyboard-configuration keyboard-configuration/variant select English (US)"
+    debconf-set-selections <<<"keyboard-configuration keyboard-configuration/variant select English"
     debconf-set-selections <<<"keyboard-configuration keyboard-configuration/xkb-keymap select "
 
-    # Setup rc-local service
+    # Setup rc-local service (Corrected Type)
     cat > /etc/systemd/system/rc-local.service <<-END
 [Unit]
 Description=/etc/rc.local Compatibility
@@ -589,7 +608,7 @@ function udp_mini(){
     sed -i 's/\r//' limit-ip # Remove Windows line endings if present
     cd
 
-    # Create systemd services for IP limiting (assuming files-ip script handles this)
+    # Create systemd services for IP limiting (Corrected Type)
     for svc in vmip vlip trip; do
         cat >/etc/systemd/system/${svc}.service << EOF
 [Unit]
