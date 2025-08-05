@@ -4,6 +4,7 @@ apt upgrade -y
 apt update -y
 apt install curl
 apt install wondershaper -y
+apt install socat -y
 Green="\e[92;1m"
 RED="\033[1;31m"
 YELLOW="\033[33m"
@@ -315,35 +316,63 @@ fi
 }
 clear
 restart_system() {
-    USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip  | grep $ipsaya | awk '{print $2}')
-    EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip  | grep $ipsaya | awk '{print $3}')
-    TIMEZONE=$(printf '%(%H:%M:%S)T')
-    RX=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 8)
+    # Pastikan variabel yang dibutuhkan telah didefinisikan sebelum fungsi ini dipanggil
+    # Contoh: ipsaya, domain, MYIP, passwd, CHATID, URL, TIMES
+    # Jika belum, definisikan di sini atau di bagian atas skrip
     
-    # Format tanggal dan waktu yang lebih rapi
+    # Contoh definisi awal (hapus atau sesuaikan jika sudah ada di tempat lain)
+    # ipsaya=$(curl -s ipv4.icanhazip.com) # atau metode lain untuk mendapat IP publik
+    # domain="contoh.com" # Ganti dengan domain Anda
+    # MYIP=$ipsaya
+    # passwd="password_anda" # Ganti dengan password root Anda
+    # CHATID="ID_CHAT_TELEGRAM_ANDA"
+    # URL="https://api.telegram.org/bot<TOKEN_BOT_ANDA>/sendMessage"
+    # TIMES=30 # Timeout untuk curl
+    
+    USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep "$ipsaya" | awk '{print $2}')
+    EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep "$ipsaya" | awk '{print $3}')
+    
+    # Format tanggal dan waktu
     DATE_FORMAT=$(date '+%d-%m-%Y')
     TIME_FORMAT=$(date '+%H:%M:%S')
     
-    TEXT="
-🚀 <b>✨ VPS SETUP COMPLETE ✨</b> 🚀
+    # Membangun pesan teks
+    TEXT="🚀 <b>✨ VPS SETUP COMPLETE ✨</b> 🚀
 <b>📋 INFORMATION DETAILS 📋 </b>
-👤 ID       : <code>$USRS</code>
+👤 ID       : <code>$USRSC</code>
 🌐 Domain   : <code>$domain</code>
 🔒 Wildcard : <code>*.$domain</code>
-📅 Date     : <cod>$DATE_FORMAT</code>
+📅 Date     : <code>$DATE_FORMAT</code>
 ⏰ Time     : <code>$TIME_FORMAT</code>
 📍 IP VPS   : <code>$MYIP</code>
 ⏳ Exp Sc   : <code>$EXPSC</code>
 🔑 User     : <code>root</code>
 🔐 Password : <code>$passwd</code>
+
 𝗖𝗢𝗡𝗧𝗔𝗖𝗧 :
 💬𝗧𝗘𝗟𝗘𝗚𝗥𝗔𝗠
 ☞ @WendiVpn
 💬𝗪𝗛𝗔𝗧𝗦𝗔𝗣𝗣
-☞ +6283153170199</code>
-<i>Simpan Baik-baik informasi ini tidak akan di kirim Ulang </i>
-"'&reply_markup={"inline_keyboard":[[{"text":"ᴏʀᴅᴇʀ","url":"https://t.me/wendivpn"},{"text":"Contack","url":"https://wa.me/6283153170199"}]]}'
-curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
+☞ +6283153170199
+
+<i>Simpan Baik-baik informasi ini tidak akan di kirim Ulang </i>"
+
+    # Membangun reply markup sebagai variabel terpisah untuk kejelasan
+    REPLY_MARKUP='{"inline_keyboard":[[{"text":"ᴏʀᴅᴇʀ","url":"https://t.me/wendivpn"},{"text":"Contack","url":"https://wa.me/6283153170199"}]]}'
+    
+    # Mengirim pesan melalui curl
+    curl -s --max-time "$TIMES" \
+         -d "chat_id=$CHATID" \
+         -d "disable_web_page_preview=1" \
+         -d "text=$TEXT" \
+         -d "parse_mode=html" \
+         -d "reply_markup=$REPLY_MARKUP" \
+         "$URL" >/dev/null 2>&1
+         
+    # Periksa apakah curl berhasil
+    if [ $? -ne 0 ]; then
+        echo "Gagal mengirim notifikasi ke Telegram."
+    fi
 }
 clear
 function pasang_ssl() {
