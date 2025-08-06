@@ -1,36 +1,80 @@
 # Decrypted by LT | FUSCATOR
-# Github- https://github.com/LunaticTunnel/Absurd
+# Github: https://github.com/LunaticTunnel/Absurd 
+# Updated for Ubuntu 24.04 & Debian 11+
 
 export DEBIAN_FRONTEND=noninteractive
-OS=`uname -m`;
-MYIP=$(wget -qO- ipinfo.io/ip);
-domain=$(cat /root/domain)
-MYIP2="s/xxxxxxxxx/$domain/g";
+
+# Detect architecture
+OS=$(uname -m)
+MYIP=$(curl -sS ifconfig.me)
+DOMAIN=$(cat /root/domain 2>/dev/null || echo "$MYIP")
+MYIP2="s/xxxxxxxxx/$DOMAIN/g"
+
+# Install required packages
+function install_packages() {
+    apt update -y
+    apt upgrade -y
+    apt install -y openvpn easy-rsa wget curl unzip openssl net-tools \
+                   procps iptables iproute2 apache2 apache2-bin apache2-utils \
+                   ssl-cert
+    a2enmod ssl
+    systemctl enable apache2
+}
+
+# Download and extract OpenVPN config
 function ovpn_install() {
-rm -rf /etc/openvpn
-mkdir -p /etc/openvpn
-wget -O /etc/openvpn/vpn.zip "https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/ovpn/vpn.zip" >/dev/null 2>&1
-unzip -d /etc/openvpn/ /etc/openvpn/vpn.zip
-rm -f /etc/openvpn/vpn.zip
-chown -R root:root /etc/openvpn/server/easy-rsa/
+    rm -rf /etc/openvpn/server
+    mkdir -p /etc/openvpn/server
+
+    # Download config archive
+    wget -O /etc/openvpn/vpn.zip "https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/ovpn/vpn.zip" >/dev/null 2>&1
+    unzip -q -d /etc/openvpn/server/ /etc/openvpn/vpn.zip
+    rm -f /etc/openvpn/vpn.zip
+
+    # Fix ownership
+    chown -R root:root /etc/openvpn/server/easy-rsa/
 }
+
+# Configure OpenVPN services
 function config_easy() {
-cd
-mkdir -p /usr/lib/openvpn/
-cp /usr/lib/x86_64-linux-gnu/openvpn/plugins/openvpn-plugin-auth-pam.so /usr/lib/openvpn/openvpn-plugin-auth-pam.so
-sed -i 's/#AUTOSTART="all"/AUTOSTART="all"/g' /etc/default/openvpn
-systemctl enable --now openvpn-server@server-tcp
-systemctl enable --now openvpn-server@server-udp
-/etc/init.d/openvpn restart
+    # Copy PAM plugin (common location on modern systems)
+    mkdir -p /usr/lib/openvpn/
+    cp /usr/lib/*/openvpn/plugins/openvpn-plugin-auth-pam.so /usr/lib/openvpn/ 2>/dev/null || \
+        cp /usr/lib/openvpn/plugins/openvpn-plugin-auth-pam.so /usr/lib/openvpn/ 2>/dev/null
+
+    # Enable autostart
+    sed -i 's/#AUTOSTART="all"/AUTOSTART="all"/g' /etc/default/openvpn
+
+    # Enable and start OpenVPN via systemd (modern method)
+    systemctl enable --now openvpn-server@server-tcp
+    systemctl enable --now openvpn-server@server-udp
+
+    # Restart (fallback)
+    systemctl restart openvpn
 }
+
+# Generate client config files
 function make_follow() {
-echo 1 > /proc/sys/net/ipv4/ip_forward
-sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
-cat > /etc/openvpn/tcp.ovpn <<-END
+    # Enable IP forwarding
+    echo 1 > /proc/sys/net/ipv4/ip_forward
+    sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
+    sysctl -p >/dev/null 2>&1
+
+    # Create client OVPN files
+    local configs=(
+        "tcp.ovpn proto tcp remote xxxxxxxxx 1194"
+        "udp.ovpn proto udp remote xxxxxxxxx 2200"
+        "ws-ssl.ovpn proto tcp remote xxxxxxxxx 443"
+        "ssl.ovpn proto tcp remote xxxxxxxxx 443"
+    )
+
+    for config in "${configs[@]}"; do
+        read -r filename proto remote > /dev/null <<< "$config"
+        cat > /etc/openvpn/$filename <<-END
 client
 dev tun
-proto tcp
-remote xxxxxxxxx 1194
+$proto
+$remote
 resolv-retry infinite
 route-method exe
 nobind
@@ -40,93 +84,122 @@ auth-user-pass
 comp-lzo
 verb 3
 END
-sed -i $MYIP2 /etc/openvpn/tcp.ovpn;
-cat > /etc/openvpn/udp.ovpn <<-END
-client
-dev tun
-proto udp
-remote xxxxxxxxx 2200
-resolv-retry infinite
-route-method exe
-nobind
-persist-key
-persist-tun
-auth-user-pass
-comp-lzo
-verb 3
-END
-sed -i $MYIP2 /etc/openvpn/udp.ovpn;
-cat > /etc/openvpn/ws-ssl.ovpn <<-END
-client
-dev tun
-proto tcp
-remote xxxxxxxxx 443
-resolv-retry infinite
-route-method exe
-nobind
-persist-key
-persist-tun
-auth-user-pass
-comp-lzo
-verb 3
-END
-sed -i $MYIP2 /etc/openvpn/ws-ssl.ovpn;
-cat > /etc/openvpn/ssl.ovpn <<-END
-client
-dev tun
-proto tcp
-remote xxxxxxxxx 443
-resolv-retry infinite
-route-method exe
-nobind
-persist-key
-persist-tun
-auth-user-pass
-comp-lzo
-verb 3
-END
-sed -i $MYIP2 /etc/openvpn/ssl.ovpn;
+        sed -i "$MYIP2" /etc/openvpn/$filename
+    done
 }
+
+# Add CA cert and publish to web
 function cert_ovpn() {
-echo '<ca>' >> /etc/openvpn/tcp.ovpn
-cat /etc/openvpn/server/ca.crt >> /etc/openvpn/tcp.ovpn
-echo '</ca>' >> /etc/openvpn/tcp.ovpn
-cp /etc/openvpn/tcp.ovpn /var/www/html/tcp.ovpn
-echo '<ca>' >> /etc/openvpn/udp.ovpn
-cat /etc/openvpn/server/ca.crt >> /etc/openvpn/udp.ovpn
-echo '</ca>' >> /etc/openvpn/udp.ovpn
-cp /etc/openvpn/udp.ovpn /var/www/html/udp.ovpn
-echo '<ca>' >> /etc/openvpn/ws-ssl.ovpn
-cat /etc/openvpn/server/ca.crt >> /etc/openvpn/ws-ssl.ovpn
-echo '</ca>' >> /etc/openvpn/ws-ssl.ovpn
-cp /etc/openvpn/ws-ssl.ovpn /var/www/html/ws-ssl.ovpn
-echo '</ca>' >> /etc/openvpn/ssl.ovpn
-cp /etc/openvpn/ws-ssl.ovpn /var/www/html/ssl.ovpn
-cd /var/www/html/
-zip Kyt-Project.zip tcp.ovpn udp.ovpn ssl.ovpn ws-ssl.ovpn > /dev/null 2>&1
-cd
-cat <<'mySiteOvpn' > /var/www/html/index.html
+    local ca_cert="/etc/openvpn/server/ca.crt"
+    if [[ ! -f "$ca_cert" ]]; then
+        echo "CA Certificate not found at $ca_cert"
+        exit 1
+    fi
+
+    local ovpn_files=("tcp.ovpn" "udp.ovpn" "ws-ssl.ovpn" "ssl.ovpn")
+    for file in "${ovpn_files[@]}"; do
+        echo '<ca>' >> "/etc/openvpn/$file"
+        cat "$ca_cert" >> "/etc/openvpn/$file"
+        echo '</ca>' >> "/etc/openvpn/$file"
+        cp "/etc/openvpn/$file" "/var/www/html/$file"
+    done
+
+    # Special copy: ssl.ovpn = ws-ssl.ovpn in original script
+    cp /etc/openvpn/ws-ssl.ovpn /var/www/html/ssl.ovpn
+
+    # Create ZIP
+    cd /var/www/html/
+    zip -q Kyt-Project.zip tcp.ovpn udp.ovpn ssl.ovpn ws-ssl.ovpn
+    cd ~
+
+    # Create index.html
+    cat > /var/www/html/index.html <<'EOF'
 <!DOCTYPE html>
 <html lang="en">
-<!-- Simple OVPN Download site -->
-<head><meta charset="utf-8" /><title>OVPN Config Download</title><meta name="description" content="Server" /><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" /><meta name="theme-color" content="#000000" /><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css"><link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.3/css/mdb.min.css" rel="stylesheet"></head><body><div class="container justify-content-center" style="margin-top:9em;margin-bottom:5em;"><div class="col-md"><div class="view"><img src="https://openvpn.net/wp-content/uploads/openvpn.jpg" class="card-img-top"><div class="mask rgba-white-slight"></div></div><div class="card"><div class="card-body"><h5 class="card-title">Config List</h5><br /><ul class="list-group">
-<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p>TCP <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="https://IP-ADDRESSS:81/tcp.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
-<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p>UDP <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="https://IP-ADDRESSS:81/udp.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
-<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p>SSL <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="https://IP-ADDRESSS:81/ssl.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
-<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p> WS SSL <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="https://IP-ADDRESSS:81/ws-ssl.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
-<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p> ALL.zip <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="https://IP-ADDRESSS:81/Kyt-Project.zip" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
-</ul></div></div></div></div></body></html>
-mySiteOvpn
-sed -i "s|IP-ADDRESSS|$(curl -sS ifconfig.me)|g" /var/www/html/index.html
+<head>
+    <meta charset="utf-8" />
+    <title>OVPN Config Download</title>
+    <meta name="description" content="OpenVPN Configs" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.3/css/mdb.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container justify-content-center" style="margin-top:9em;margin-bottom:5em;">
+    <div class="col-md">
+        <div class="view">
+            <img src="https://openvpn.net/wp-content/uploads/openvpn.jpg" class="card-img-top">
+            <div class="mask rgba-white-slight"></div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Config List</h5><br />
+                <ul class="list-group">
+                    <li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;">
+                        <p>TCP <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span></p>
+                        <a class="btn btn-outline-success waves-effect btn-sm" href="http://DOMAIN:81/tcp.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a>
+                    </li>
+                    <li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;">
+                        <p>UDP <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span></p>
+                        <a class="btn btn-outline-success waves-effect btn-sm" href="http://DOMAIN:81/udp.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a>
+                    </li>
+                    <li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;">
+                        <p>SSL <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span></p>
+                        <a class="btn btn-outline-success waves-effect btn-sm" href="http://DOMAIN:81/ssl.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a>
+                    </li>
+                    <li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;">
+                        <p>WS SSL <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span></p>
+                        <a class="btn btn-outline-success waves-effect btn-sm" href="http://DOMAIN:81/ws-ssl.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a>
+                    </li>
+                    <li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;">
+                        <p>ALL.zip <span class="badge light-blue darken-4">All Devices</span></p>
+                        <a class="btn btn-outline-success waves-effect btn-sm" href="http://DOMAIN:81/Kyt-Project.zip" style="float:right;"><i class="fa fa-download"></i> Download</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+EOF
+
+    # Replace DOMAIN placeholder
+    sed -i "s|DOMAIN|$DOMAIN|g" /var/www/html/index.html
+
+    # Ensure Apache serves on port 81
+    if ! grep -q "Listen 81" /etc/apache2/ports.conf; then
+        echo "Listen 81" >> /etc/apache2/ports.conf
+    fi
+
+    cat > /etc/apache2/sites-available/81.conf <<EOF
+<VirtualHost *:81>
+    DocumentRoot /var/www/html
+    <Directory /var/www/html>
+        Require all granted
+    </Directory>
+</VirtualHost>
+EOF
+
+    a2ensite 81.conf >/dev/null 2>&1
+    systemctl reload apache2
 }
+
+# Main installer
 function install_ovpn() {
-ovpn_install
-config_easy
-make_follow
-make_follow
-cert_ovpn
-systemctl enable openvpn
-systemctl start openvpn
-/etc/init.d/openvpn restart
+    echo "Installing OpenVPN for Ubuntu 24.04 / Debian 11+..."
+    install_packages
+    ovpn_install
+    config_easy
+    make_follow
+    cert_ovpn
+    systemctl enable openvpn
+    systemctl restart openvpn
+    echo "OpenVPN installation completed."
+    echo "Configs available at: http://$DOMAIN:81"
 }
+
+# Run installer
 install_ovpn
