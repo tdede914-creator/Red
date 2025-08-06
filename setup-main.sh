@@ -1057,42 +1057,49 @@ function restart_system() {
     fi
     USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep "$ipsaya" | awk '{print $2}')
     EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep "$ipsaya" | awk '{print $3}')
+
     # Format tanggal dan waktu
     DATE_FORMAT=$(date '+%d-%m-%Y')
     TIME_FORMAT=$(date '+%H:%M:%S')
-    # Membangun pesan teks
-    TEXT="ð     <b>â  ¨ VPS SETUP COMPLETE â  ¨</b> ð     
-<b>ð     INFORMATION DETAILS ð     </b>
-ð   ¤ ID       : <code>$USRSC</code>
-ð     Domain   : <code>$domain</code>
-ð     Wildcard : <code>*.$domain</code>
-ð     Date     : <code>$DATE_FORMAT</code>
-â  ° Time     : <code>$TIME_FORMAT</code>
-ð     IP VPS   : <code>$MYIP</code>
-â  ³ Exp Sc   : <code>$EXPSC</code>
-ð     User     : <code>root</code>
-ð     Password : <code>$passwd</code>
-ð    ð   ¢ð   ¡ð   §ð    ð    ð   § :
-ð   ¬ð   §ð    ð    ð    ð    ð   ¥ð    ð    
-â    @WendiVpn
-ð   ¬ð   ªð    ð    ð   §ð   ¦ð    ð   £ð   £
-â    +6283153170199
-<i>Simpan Baik-baik informasi ini tidak akan di kirim Ulang </i>"
+
+    # Membangun pesan teks dengan emoji
+    TEXT="✨ <b>🎉 INSTALASI WENDY VPN SELESAI 🎉</b> ✨
+
+🔐 <b>🔐 INFORMASI AKUN VPS 🔐</b>
+
+🏷 <b>ID :</b> <code>$USRSC</code>
+🌐 <b>Domain :</b> <code>$domain</code>
+🔖 <b>Wildcard :</b> <code>*.$domain</code>
+📆 <b>Tanggal :</b> <code>$DATE_FORMAT</code>
+🕐 <b>Waktu :</b> <code>$TIME_FORMAT</code>
+🖥 <b>IP VPS :</b> <code>$MYIP</code>
+⏳ <b>Exp Sc :</b> <code>$EXPSC</code>
+👤 <b>User :</b> <code>root</code>
+🔑 <b>Password :</b> <code>$passwd</code>
+
+❗ <i>Simpan informasi ini dengan baik, pesan ini tidak akan dikirim ulang!</i>
+
+🔗 <b>Tautan Berguna:</b>
+💬 <a href='https://t.me/wendivpn'>Grup Telegram</a>
+📞 <a href='https://wa.me/6283153170199'>Kontak Admin</a>"
+
     # Membangun reply markup sebagai variabel terpisah untuk kejelasan
-    REPLY_MARKUP='{"inline_keyboard":[[{"text":"á´  Ê  á´  á´  Ê  ","url":"https://t.me/wendivpn"},{"text":"Contack","url":"https://wa.me/6283153170199"}]]}'
+    REPLY_MARKUP='{"inline_keyboard":[[{"text":"👥 Grup Telegram","url":"https://t.me/wendivpn"},{"text":"📞 Kontak Admin","url":"https://wa.me/6283153170199"}]]}'
+
     # Mengirim pesan melalui curl
     log "Mengirim notifikasi ke Telegram..."
-    curl -s --max-time "$TIMES" \
+    CURL_RESPONSE=$(curl -s --max-time "$TIMES" \
          -d "chat_id=$CHATID" \
          -d "disable_web_page_preview=1" \
          -d "text=$TEXT" \
          -d "parse_mode=html" \
          -d "reply_markup=$REPLY_MARKUP" \
-         "$URL" >> "$LOG_FILE" 2>&1
+         "$URL")
+
     # Periksa apakah curl berhasil
-    if [ $? -ne 0 ]; then
+    if [ $? -ne 0 ] || echo "$CURL_RESPONSE" | grep -q '"ok":false'; then
         echo "Gagal mengirim notifikasi ke Telegram."
-        log "ERROR: Gagal mengirim notifikasi ke Telegram."
+        log "ERROR: Gagal mengirim notifikasi ke Telegram. Response: $CURL_RESPONSE"
     else
         log "Notifikasi Telegram berhasil dikirim."
     fi
