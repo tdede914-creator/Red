@@ -1123,7 +1123,6 @@ function install(){
     ins_SSHD
     ins_dropbear
     ins_vnstat
-    ins_openvpn
     ins_backup
     ins_swab
     ins_Fail2ban
