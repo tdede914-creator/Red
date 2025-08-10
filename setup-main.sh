@@ -214,7 +214,7 @@ function base_package() {
     print_install "Menginstall Packet Yang Dibutuhkan"
     # Instalasi paket (dikelompokkan untuk logging yang lebih baik)
     echo "Menginstal paket dasar..."
-    apt install zip pwgen openssl netcat socat cron bash-completion figlet -y || echo "ERROR: Gagal menginstal paket dasar 1."
+    apt install zip pwgen openssl netcat-openbsd socat cron bash-completion figlet -y || echo "ERROR: Gagal menginstal paket dasar 1."
     echo "Memperbarui dan memutakhirkan sistem..."
     apt update -y
     apt upgrade -y
@@ -241,8 +241,7 @@ function base_package() {
     echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
     echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
     echo "Menginstal paket utama..."
-    # Modifikasi untuk Ubuntu 24: hapus python (diganti python2 atau python3 jika diperlukan), hapus openvpn
-    sudo apt-get install -y speedtest-cli vnstat libnss3-dev libnspr4-dev pkg-config libpam0g-dev libcap-ng-dev libcap-ng-utils libselinux1-dev libcurl4-nss-dev flex bison make libnss3-tools libevent-dev bc rsyslog dos2unix zlib1g-dev libssl-dev libsqlite3-dev sed dirmngr libxml-parser-perl build-essential gcc g++ python3 htop lsof tar wget curl ruby zip unzip p7zip-full python3-pip libc6 util-linux build-essential msmtp-mta ca-certificates bsd-mailx iptables iptables-persistent netfilter-persistent net-tools openssl ca-certificates gnupg gnupg2 ca-certificates lsb-release gcc shc make cmake git screen socat xz-utils apt-transport-https gnupg1 dnsutils cron bash-completion ntpdate chrony jq easy-rsa || echo "ERROR: Gagal menginstal paket utama."
+    sudo apt-get install -y speedtest-cli vnstat libnss3-dev libnspr4-dev pkg-config libpam0g-dev libcap-ng-dev libcap-ng-utils libselinux1-dev libcurl4-nss-dev flex bison make libnss3-tools libevent-dev bc rsyslog dos2unix zlib1g-dev libssl-dev libsqlite3-dev sed dirmngr libxml-parser-perl build-essential gcc g++ python3 htop lsof tar wget curl ruby zip unzip p7zip-full python3-pip libc6 util-linux build-essential msmtp-mta ca-certificates bsd-mailx iptables iptables-persistent netfilter-persistent net-tools openssl ca-certificates gnupg gnupg2 ca-certificates lsb-release gcc shc make cmake git screen socat xz-utils apt-transport-https dnsutils cron bash-completion ntpdate chrony jq easy-rsa || echo "ERROR: Gagal menginstal paket utama."
     print_success "Packet Yang Dibutuhkan"
     echo "========== base_package SELESAI =========="
 }
@@ -869,6 +868,90 @@ EOF
     echo "========== ins_backup SELESAI =========="
 }
 
+function udp_mini(){
+    echo "========== MENJALANKAN udp_mini =========="
+    print_install "Memasang Service limit Quota"
+
+    # --- Bagian limit.sh ---
+    # Modifikasi untuk Ubuntu 24: Pastikan limit.sh menggunakan netcat-openbsd dan python3
+    # Perbaiki URL dengan menambahkan https://
+    echo "Mengunduh dan menjalankan limit.sh..."
+    wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/limit.sh && chmod +x limit.sh && ./limit.sh
+    # Asumsi limit.sh menangani instalasi netcat-openbsd dan dependensi lainnya dengan benar untuk Ubuntu 24
+    
+    # --- Bagian limit-ip ---
+    echo "Mengunduh limit-ip..."
+    # Perbaiki URL dengan menambahkan https://
+    wget -q -O /usr/bin/limit-ip "https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/limit-ip"
+    # Perbaiki permission hanya untuk file yang diunduh
+    chmod +x /usr/bin/limit-ip
+    # Perbaiki line endings jika diperlukan (opsional, tergantung sumber file)
+    # sed -i 's/\r$//' /usr/bin/limit-ip 
+
+    # --- Bagian Layanan VMIP/VLIP/TRIP (files-ip) ---
+    # Catatan: Pastikan skrip files-ip (yang dipanggil oleh layanan ini) kompatibel dengan Ubuntu 24 (python3, netcat-openbsd)
+    echo "Membuat dan mengaktifkan layanan vmip, vlip, trip..."
+    for service_name in vmip vlip trip; do
+        cat >/etc/systemd/system/${service_name}.service << EOF
+[Unit]
+Description=My ${service_name^^} Service
+After=network.target
+
+[Service]
+# Pertimbangkan untuk menggunakan direktori yang lebih sesuai daripada /root
+WorkingDirectory=/root 
+# Pastikan files-ip ada dan dapat dieksekusi, serta kompatibel (python3, netcat-openbsd)
+ExecStart=/usr/bin/files-ip ${service_name}
+Restart=always
+RestartSec=5
+User=root # Atau user non-root yang sesuai jika memungkinkan
+# StandardError=journal # Untuk debugging jika diperlukan
+
+[Install]
+WantedBy=multi-user.target
+EOF
+        systemctl daemon-reload
+        systemctl restart ${service_name}
+        systemctl enable ${service_name}
+        echo "Layanan ${service_name} dibuat, direstart, dan diaktifkan."
+    done
+
+    # --- Bagian UDP-Mini ---
+    echo "Membuat direktori dan mengunduh udp-mini..."
+    mkdir -p /usr/local/kyt/
+    # Perbaiki URL dengan menambahkan https://
+    wget -q -O /usr/local/kyt/udp-mini "https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/udp-mini"
+    chmod +x /usr/local/kyt/udp-mini
+
+    echo "Mengunduh dan mengelola layanan udp-mini..."
+    # Unduh file layanan dengan nama yang diharapkan
+    # Asumsi nama file di repo adalah udp-mini-1.service, dll.
+    for i in {1..3}; do
+        # Perbaiki URL dengan menambahkan https://
+        wget -q -O /etc/systemd/system/udp-mini-${i}.service "https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/udp-mini-${i}.service"
+    done
+
+    # Restart dan enable layanan (menggunakan nama yang diunduh dan disimpan)
+    for i in {1..3}; do
+        systemctl daemon-reload
+        systemctl stop udp-mini-${i} 2>/dev/null # Hapus dulu jika ada
+        systemctl disable udp-mini-${i} 2>/dev/null # Disable dulu jika ada
+        
+        # Enable dan start layanan
+        systemctl enable udp-mini-${i}
+        systemctl start udp-mini-${i}
+        
+        if systemctl is-active --quiet udp-mini-${i}; then
+            echo "Layanan udp-mini-${i} berhasil diaktifkan dan dimulai."
+        else
+            echo "WARNING: Gagal memulai layanan udp-mini-${i}. Periksa status layanan."
+        fi
+    done
+
+    print_success "files Quota Service"
+    echo "========== udp_mini SELESAI =========="
+}
+
 function password_default() {
     # Fungsi ini kosong dalam skrip asli, mungkin untuk keperluan tertentu nanti
     # Atau bisa diisi dengan konfigurasi password default jika diperlukan
@@ -977,6 +1060,46 @@ function restart_system() {
     fi
     echo "========== restart_system SELESAI =========="
 }
+function install_openvpn() {
+    echo "========== MENJALANKAN install_openvpn =========="
+    print_install "Menginstall OpenVPN"
+
+    # 1. Instal paket OpenVPN dari repositori resmi (Direkomendasikan untuk Ubuntu 24.04)
+    echo "Menginstal paket openvpn dari repositori..."
+    apt update -y > /dev/null 2>&1 # Pastikan daftar paket terbaru
+    apt install -y openvpn || { echo "ERROR: Gagal menginstal paket openvpn."; print_error "OpenVPN"; echo "========== install_openvpn GAGAL =========="; return 1; }
+    print_success "Instalasi Paket OpenVPN"
+
+    # 2. (Opsional) Jika Anda masih ingin menggunakan skrip kustom dari repo Anda
+    #    Catatan: Ini adalah pendekatan alternatif. Pendekatan #1 (instal paket) biasanya lebih disukai.
+    #    Jika menggunakan ini, pastikan openvpn_setup.sh kompatibel dengan Ubuntu 24.04.
+    # echo "Mengunduh dan menjalankan skrip konfigurasi kustom (jika ada)..."
+    # wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/openvpn_setup.sh -O /root/openvpn_setup.sh || { echo "WARNING: Gagal mengunduh openvpn_setup.sh."; }
+    # if [[ -f /root/openvpn_setup.sh ]]; then
+    #     chmod +x /root/openvpn_setup.sh
+    #     /root/openvpn_setup.sh || { echo "WARNING: Gagal menjalankan openvpn_setup.sh."; }
+    #     # Bersihkan skrip sementara
+    #     rm -f /root/openvpn_setup.sh
+    # fi
+
+    # 3. Aktifkan dan restart layanan OpenVPN menggunakan systemd
+    #    Catatan: OpenVPN biasanya menggunakan template layanan. Untuk server, ini seringkali 'openvpn-server@server'.
+    #    Anda mungkin perlu menyesuaikan nama layanan berdasarkan konfigurasi Anda.
+    echo "Mengaktifkan dan merestart layanan OpenVPN..."
+    # Ganti 'server' dengan nama konfigurasi .conf Anda (tanpa .conf) jika berbeda
+    # Misalnya, jika file konfigurasinya /etc/openvpn/server/myconfig.conf, gunakan 'myconfig'
+    OPENVPN_CONFIG_NAME="server" 
+
+    systemctl enable openvpn-server@${OPENVPN_CONFIG_NAME} > /dev/null 2>&1
+    if ! systemctl restart openvpn-server@${OPENVPN_CONFIG_NAME}; then
+        echo "WARNING: Gagal merestart layanan openvpn-server@${OPENVPN_CONFIG_NAME}. Pastikan konfigurasi sudah dibuat."
+        # Atau, hentikan skrip jika ini kritis:
+        # print_error "OpenVPN"; echo "========== install_openvpn GAGAL =========="; return 1;
+    fi
+
+    print_success "OpenVPN"
+    echo "========== install_openvpn SELESAI =========="
+}
 
 # --- Fungsi Utama Install ---
 function install(){
@@ -991,6 +1114,7 @@ function install(){
     pasang_ssl
     install_xray
     ssh
+    udp_mini
     ssh_slow
     ins_SSHD
     ins_dropbear
