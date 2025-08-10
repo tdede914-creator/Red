@@ -1060,6 +1060,7 @@ function restart_system() {
     fi
     echo "========== restart_system SELESAI =========="
 }
+
 function install_openvpn() {
     echo "========== MENJALANKAN install_openvpn =========="
     print_install "Menginstall OpenVPN"
@@ -1067,34 +1068,44 @@ function install_openvpn() {
     # 1. Instal paket OpenVPN dari repositori resmi (Direkomendasikan untuk Ubuntu 24.04)
     echo "Menginstal paket openvpn dari repositori..."
     apt update -y > /dev/null 2>&1 # Pastikan daftar paket terbaru
-    apt install -y openvpn || { echo "ERROR: Gagal menginstal paket openvpn."; print_error "OpenVPN"; echo "========== install_openvpn GAGAL =========="; return 1; }
+    apt install -y openvpn || { echo "ERROR: Gagal menginstal paket openvpn."; print_error "OpenVPN (Instalasi Paket)"; echo "========== install_openvpn GAGAL =========="; return 1; }
     print_success "Instalasi Paket OpenVPN"
 
-    # 2. (Opsional) Jika Anda masih ingin menggunakan skrip kustom dari repo Anda
-    #    Catatan: Ini adalah pendekatan alternatif. Pendekatan #1 (instal paket) biasanya lebih disukai.
-    #    Jika menggunakan ini, pastikan openvpn_setup.sh kompatibel dengan Ubuntu 24.04.
-    # echo "Mengunduh dan menjalankan skrip konfigurasi kustom (jika ada)..."
-    # wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/openvpn_setup.sh -O /root/openvpn_setup.sh || { echo "WARNING: Gagal mengunduh openvpn_setup.sh."; }
-    # if [[ -f /root/openvpn_setup.sh ]]; then
-    #     chmod +x /root/openvpn_setup.sh
-    #     /root/openvpn_setup.sh || { echo "WARNING: Gagal menjalankan openvpn_setup.sh."; }
-    #     # Bersihkan skrip sementara
-    #     rm -f /root/openvpn_setup.sh
-    # fi
+    # 2. Unduh dan Jalankan Skrip Konfigurasi Kustom
+    #    Asumsi: Skrip ini melakukan konfigurasi lanjutan seperti mengekstrak template,
+    #            mengatur sertifikat, dan mungkin membuat file konfigurasi di /etc/openvpn/server/
+    echo "Mengunduh dan menjalankan skrip konfigurasi kustom..."
+    # Perbaiki URL dengan menambahkan https://
+    if wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/openvpn -O /root/openvpn_setup.sh; then
+        chmod +x /root/openvpn_setup.sh
+        if /root/openvpn_setup.sh; then
+            echo "Skrip konfigurasi kustom berhasil dijalankan."
+        else
+            echo "WARNING: Gagal menjalankan skrip konfigurasi kustom (/root/openvpn_setup.sh). Periksa log atau skrip tersebut."
+            # Tidak langsung keluar, karena instalasi paket berhasil
+        fi
+        # Bersihkan skrip sementara
+        rm -f /root/openvpn_setup.sh
+    else
+        echo "WARNING: Gagal mengunduh skrip konfigurasi kustom (openvpn). Konfigurasi dasar mungkin tidak lengkap."
+        # Tidak langsung keluar, karena instalasi paket berhasil
+    fi
 
-    # 3. Aktifkan dan restart layanan OpenVPN menggunakan systemd
-    #    Catatan: OpenVPN biasanya menggunakan template layanan. Untuk server, ini seringkali 'openvpn-server@server'.
-    #    Anda mungkin perlu menyesuaikan nama layanan berdasarkan konfigurasi Anda.
-    echo "Mengaktifkan dan merestart layanan OpenVPN..."
-    # Ganti 'server' dengan nama konfigurasi .conf Anda (tanpa .conf) jika berbeda
-    # Misalnya, jika file konfigurasinya /etc/openvpn/server/myconfig.conf, gunakan 'myconfig'
-    OPENVPN_CONFIG_NAME="server" 
+    # 3. Aktifkan dan Restart Layanan OpenVPN menggunakan systemd
+    #    Asumsi: Skrip konfigurasi membuat file /etc/openvpn/server/server.conf
+    echo "Mengaktifkan dan merestart layanan OpenVPN (server)..."
+    
+    # Aktifkan layanan agar otomatis start saat boot
+    if ! systemctl enable openvpn-server@server; then
+        echo "WARNING: Gagal mengaktifkan layanan openvpn-server@server."
+    fi
 
-    systemctl enable openvpn-server@${OPENVPN_CONFIG_NAME} > /dev/null 2>&1
-    if ! systemctl restart openvpn-server@${OPENVPN_CONFIG_NAME}; then
-        echo "WARNING: Gagal merestart layanan openvpn-server@${OPENVPN_CONFIG_NAME}. Pastikan konfigurasi sudah dibuat."
-        # Atau, hentikan skrip jika ini kritis:
-        # print_error "OpenVPN"; echo "========== install_openvpn GAGAL =========="; return 1;
+    # Restart layanan untuk menerapkan konfigurasi
+    if systemctl restart openvpn-server@server; then
+        echo "Layanan openvpn-server@server berhasil direstart."
+    else
+        echo "WARNING: Gagal merestart layanan openvpn-server@server. Pastikan konfigurasi sudah dibuat dengan benar."
+        # Tidak langsung keluar, karena instalasi paket berhasil
     fi
 
     print_success "OpenVPN"
@@ -1112,6 +1123,7 @@ function install(){
     pasang_domain
     password_default
     pasang_ssl
+    install_openvpn
     install_xray
     ssh
     udp_mini
