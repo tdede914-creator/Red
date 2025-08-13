@@ -960,6 +960,7 @@ function restart_system() {
     echo "========== MENJALANKAN restart_system =========="
 CHATID="5162695441"
 TOKEN_BOT="7117869623:AAHBmgzOUsmHBjcm5TFir9JmaZ_X7ynMoF4"
+TIMES=30
     # --- Periksa apakah konfigurasi Telegram tersedia ---
     if [[ -z "$CHATID" || -z "$TOKEN_BOT" ]]; then
         echo "WARNING: Konfigurasi Telegram tidak lengkap (CHATID atau TOKEN_BOT kosong)."
