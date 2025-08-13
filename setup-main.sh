@@ -1,7 +1,4 @@
-#!/bin/bash
-CHATID="5162695441"    
-TOKEN_BOT="7117869623:AAHBmgzOUsmHBjcm5TFir9JmaZ_X7ynMoF4"
-TIMES="30"                          
+#!/bin/bash                         
 # Definisi warna
 Green="\e[92;1m"
 RED="\033[1;31m"
