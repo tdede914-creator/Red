@@ -1002,8 +1002,7 @@ TIMES=30
     fi
 
     # --- Membangun pesan teks dengan variasi emoji ---
-    local TEXT="
-🚀 <b>✅ INSTALASI WENDY VPN SELESAI ✅</b> 🚀
+    local TEXT="<b>✅ INSTALASI WENDY VPN SELESAI ✅</b>
 
 🖥️ <b>INFORMASI VPS</b> 🖥️
 🆔 <b>ID :</b> <code>$USRSC</code>
