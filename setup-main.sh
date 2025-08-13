@@ -964,99 +964,119 @@ function restart_system() {
         echo "WARNING: Konfigurasi Telegram tidak lengkap (CHATID atau TOKEN_BOT kosong)."
         echo "         Notifikasi Telegram dilewati."
         echo "========== restart_system SELESAI (tanpa notifikasi) =========="
-        return 0 # Keluar dari fungsi dengan sukses
+        return 0
     fi
 
-    # Bangun URL API Telegram
-    URL="https://api.telegram.org/bot${TOKEN_BOT}/sendMessage"
+    # Bangun URL API Telegram (Pastikan tidak ada spasi)
+    local URL="https://api.telegram.org/bot${TOKEN_BOT}/sendMessage"
 
-    # Ambil informasi yang diperlukan
-    domain=$(cat /root/domain 2>/dev/null)
+    # --- Ambil informasi yang diperlukan ---
+    local ipsaya=$(wget -qO- ipinfo.io/ip)
+    if [[ -z "$ipsaya" ]]; then
+        echo "WARNING: Gagal mendapatkan IP publik."
+        ipsaya="Tidak Diketahui"
+    fi
+
+    # --- Perbaikan: Ambil domain dari /etc/xray/domain ---
+    local domain=$(cat /etc/xray/domain 2>/dev/null)
     if [ -z "$domain" ]; then
         domain="Tidak Ditemukan"
-        echo "WARNING: Domain tidak ditemukan untuk notifikasi Telegram."
-    fi
-
-    # Ambil informasi pengguna dan expired dari repo (seperti sebelumnya)
-    USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep "$ipsaya" | awk '{print $2}')
-    EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep "$ipsaya" | awk '{print $3}')
-
-    # Pastikan variabel passwd memiliki nilai
-    # Jika dilewati, passwd mungkin tidak di-set. Gunakan placeholder atau sembunyikan.
-    if [[ -z "$passwd" ]]; then
-        # Opsional: Tampilkan pesan bahwa password tidak akan ditampilkan jika dilewati
-        # Atau, jika Anda ingin menampilkan pesan bahwa password adalah yang saat ini digunakan:
-        passwd_display="<i>(Password tidak diubah/digunakan saat ini)</i>"
-    else
-        passwd_display="<code>$passwd</code>"
+        echo "WARNING: Domain tidak ditemukan di /etc/xray/domain untuk notifikasi Telegram."
     fi
 
     # Format tanggal dan waktu
-    DATE_FORMAT=$(date '+%d-%m-%Y')
-    TIME_FORMAT=$(date '+%H:%M:%S')
+    local DATE_FORMAT=$(date '+%d-%m-%Y')
+    local TIME_FORMAT=$(date '+%H:%M:%S')
 
-    # Membangun pesan teks dengan emoji dan desain yang lebih baik
-    TEXT="
-🚨 <b>✅ INSTALASI WENDY VPN SELESAI ✅</b> 🚨
-🎬 <b>INFORMASI VPS</b> 🎬
-🌐 <b>ID :</b> <code>$USRSC</code>
-🌍 <b>Domain :</b> <code>$domain</code>
-🔍 <b>Wildcard :</b> <code>*.$domain</code>
+    # --- Ambil informasi pengguna dan expired dari repo ---
+    local USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep "$ipsaya" | awk '{print $2}' | head -n 1)
+    local EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep "$ipsaya" | awk '{print $3}' | head -n 1)
+
+    # --- Tampilkan Password atau Pesan Placeholder ---
+    if [[ -z "$passwd" ]]; then
+        local passwd_display="<i>(Tidak diubah/digunakan saat ini)</i>"
+    else
+        local passwd_display="<code>$passwd</code>"
+    fi
+
+    # --- Membangun pesan teks dengan variasi emoji ---
+    local TEXT="
+🚀 <b>✅ INSTALASI WENDY VPN SELESAI ✅</b> 🚀
+
+🖥️ <b>INFORMASI VPS</b> 🖥️
+🆔 <b>ID :</b> <code>$USRSC</code>
+🌐 <b>Domain :</b> <code>$domain</code>
+🌍 <b>Wildcard :</b> <code>*.$domain</code>
 📅 <b>Tanggal :</b> <code>$DATE_FORMAT</code>
-⏰ <b>Waktu :</b> <code>$TIME_FORMAT</code>
-🖥️ <b>IP VPS :</b> <code>$MYIP</code>
+🕘 <b>Waktu :</b> <code>$TIME_FORMAT</code>
+📡 <b>IP VPS :</b> <code>$ipsaya</code>
 ⏳ <b>Exp Sc :</b> <code>$EXPSC</code>
+
 🔐 <b>Akun Login</b> 🔐
 👤 <b>Username :</b> <code>root</code>
 🔑 <b>Password :</b> $passwd_display
-⚠️ <b>Simpan informasi ini baik-baik!</b> ⚠️
+
+💾 <b>Simpan informasi ini baik-baik!</b> 💾
 <i>Informasi ini tidak akan dikirim ulang.</i>
+
 📞 <b>Dukungan & Kontak</b> 📞
-📱 Telegram: @WendiVpn
-💬 WhatsApp: +6283153170199
+💬 Telegram: @WendiVpn
+📱 WhatsApp: +6283153170199
 "
 
-    # Membangun reply markup sebagai variabel terpisah untuk kejelasan
-    REPLY_MARKUP='{"inline_keyboard":[[{"text":"🌐 Website","url":"https://t.me/wendivpn"},{"text":"💬 Kontak","url":"https://wa.me/6283153170199"}]]}'
+    # --- Membangun reply markup ---
+    local REPLY_MARKUP='{"inline_keyboard":[[{"text":"🌐 Website","url":"https://t.me/wendivpn"},{"text":"🛠 Kontak","url":"https://wa.me/6283153170199"}]]}'
 
-    # Mengirim pesan melalui curl
+    # --- Mengirim pesan melalui curl ---
     echo "Mengirim notifikasi ke Telegram (Chat ID: $CHATID)..."
-    # Simpan output curl ke variabel untuk debugging jika diperlukan
+    local CURL_OUTPUT
     CURL_OUTPUT=$(curl -s --max-time "$TIMES" \
-         -d "chat_id=$CHATID" \
+         --data-urlencode "chat_id=$CHATID" \
          -d "disable_web_page_preview=1" \
-         -d "text=$TEXT" \
+         --data-urlencode "text=$TEXT" \
          -d "parse_mode=html" \
-         -d "reply_markup=$REPLY_MARKUP" \
-         "$URL")
+         --data-urlencode "reply_markup=$REPLY_MARKUP" \
+         "$URL" 2>&1) # Redirect stderr ke output untuk debugging jika perlu
+    local CURL_EXIT_CODE=$?
 
-    CURL_EXIT_CODE=$?
-
-    # Periksa apakah curl berhasil
+    # --- Periksa hasil curl ---
     if [ $CURL_EXIT_CODE -ne 0 ]; then
         echo "❌ Gagal mengirim notifikasi ke Telegram (Exit Code: $CURL_EXIT_CODE)."
-        # Opsional: Tampilkan output curl untuk debugging
-        # echo "Output curl: $CURL_OUTPUT"
+        echo "   Output curl: $CURL_OUTPUT"
     else
-        # Periksa apakah Telegram mengembalikan error dalam respons JSON
-        if echo "$CURL_OUTPUT" | jq -e .ok > /dev/null 2>&1; then
-            if [ "$(echo "$CURL_OUTPUT" | jq -r .ok)" = "true" ]; then
-                echo "✅ Notifikasi Telegram berhasil dikirim."
+        # Periksa apakah Telegram mengembalikan error dalam respons JSON (jika jq tersedia)
+        if command -v jq >/dev/null 2>&1; then
+            if echo "$CURL_OUTPUT" | jq -e .ok > /dev/null 2>&1; then
+                if [ "$(echo "$CURL_OUTPUT" | jq -r .ok)" = "true" ]; then
+                    echo "✅ Notifikasi Telegram berhasil dikirim."
+                else
+                    local ERROR_CODE=$(echo "$CURL_OUTPUT" | jq -r .error_code 2>/dev/null || echo "N/A")
+                    local DESCRIPTION=$(echo "$CURL_OUTPUT" | jq -r .description 2>/dev/null || echo "N/A")
+                    echo "❌ Gagal mengirim notifikasi ke Telegram (API Error)."
+                    echo "   Kode Error: $ERROR_CODE"
+                    echo "   Deskripsi: $DESCRIPTION"
+                fi
             else
-                ERROR_CODE=$(echo "$CURL_OUTPUT" | jq -r .error_code)
-                DESCRIPTION=$(echo "$CURL_OUTPUT" | jq -r .description)
-                echo "❌ Gagal mengirim notifikasi ke Telegram (API Error)."
-                echo "   Kode Error: $ERROR_CODE"
-                echo "   Deskripsi: $DESCRIPTION"
-                # echo "   Respons Penuh: $CURL_OUTPUT" # Untuk debugging ekstra
+                 echo "⚠️ Respons tidak valid dari API Telegram. Mungkin berhasil, tapi periksa Telegram Anda."
+                 echo "   Respons: $CURL_OUTPUT"
             fi
         else
-            echo "⚠️ Respons tidak valid dari API Telegram. Mungkin berhasil, tapi periksa Telegram Anda."
-            # echo "   Respons: $CURL_OUTPUT" # Untuk debugging
+            # Jika jq tidak tersedia, lakukan pengecekan dasar
+            if echo "$CURL_OUTPUT" | grep -q '"ok":true'; then
+                 echo "✅ Notifikasi Telegram berhasil dikirim (berdasarkan output)."
+            elif echo "$CURL_OUTPUT" | grep -q '"ok":false'; then
+                 echo "❌ Gagal mengirim notifikasi ke Telegram (berdasarkan output)."
+                 echo "   Respons: $CURL_OUTPUT"
+            else
+                 # Tidak ada indikasi jelas sukses/gagal, asumsikan sukses atau beri peringatan
+                 echo "⚠️ Respons tidak jelas dari API Telegram. Mungkin berhasil, tapi periksa Telegram Anda."
+                 echo "   Respons: $CURL_OUTPUT"
+            fi
         fi
     fi
     echo "========== restart_system SELESAI =========="
 }
+
 
 function install_openvpn() {
     echo "========== MENJALANKAN install_openvpn =========="
