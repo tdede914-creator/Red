@@ -42,7 +42,7 @@ jobs:
 
       # 3. Set permissions untuk skrip setup
       - name: Make setup script executable
-        run: chmod +x ./setup.txt
+        run: chmod +x ./setup-main.sh
 
       # 4. Jalankan skrip setup
       # Karena skrip meminta input, kita gunakan `yes` untuk memberikan input otomatis
@@ -56,13 +56,13 @@ jobs:
         run: |
           echo "Starting setup script with automated input..."
           # Kirim '2' lalu 'Enter' terus menerus, timeout 300 detik (5 menit, sesuaikan jika perlu)
-          timeout 300 bash -c 'echo -e "2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup.txt' 2>&1
+          timeout 300 bash -c 'echo -e "2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup-main.sh' 2>&1
           # Atau jika ingin menggunakan input dari workflow_dispatch:
           # INPUT_SKIP=$(echo "${{ github.event.inputs.skip_password }}" | tr '[:upper:]' '[:lower:]')
           # if [[ "$INPUT_SKIP" == "yes" ]]; then
-          #   timeout 300 bash -c 'echo -e "2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup.txt' 2>&1
+          #   timeout 300 bash -c 'echo -e "2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup-main.sh' 2>&1
           # else
-          #   timeout 300 bash -c 'echo -e "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup.txt' 2>&1 # Tidak melewati password
+          #   timeout 300 bash -c 'echo -e "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup-main.sh' 2>&1 # Tidak melewati password
           # fi
         continue-on-error: true # Biarkan job lanjut meski ada error di skrip (karena banyak error handling di skrip)
 
