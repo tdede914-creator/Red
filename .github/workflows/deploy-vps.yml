@@ -56,7 +56,7 @@ jobs:
         run: |
           echo "Starting setup script with automated input..."
           # Kirim '2' lalu 'Enter' terus menerus, timeout 300 detik (5 menit, sesuaikan jika perlu)
-          timeout 300 bash -c 'echo -e "2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup-main.sh' 2>&1
+          timeout 600 bash -c 'echo -e "2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup-main.sh' 2>&1
           # Atau jika ingin menggunakan input dari workflow_dispatch:
           # INPUT_SKIP=$(echo "${{ github.event.inputs.skip_password }}" | tr '[:upper:]' '[:lower:]')
           # if [[ "$INPUT_SKIP" == "yes" ]]; then
