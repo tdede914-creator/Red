@@ -42,7 +42,7 @@ jobs:
 
       # 3. Set permissions untuk skrip setup
       - name: Make setup script executable
-        run: chmod +x ./files/openvpn
+        run: chmod +x ./files/openvpn.sh
 
       # 4. Jalankan skrip setup
       # Karena skrip meminta input, kita gunakan `yes` untuk memberikan input otomatis
@@ -56,7 +56,7 @@ jobs:
         run: |
           echo "Starting setup script with automated input..."
           # Kirim '2' lalu 'Enter' terus menerus, timeout 300 detik (5 menit, sesuaikan jika perlu)
-          timeout 600 bash -c 'echo -e "2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./files/openvpn
+          timeout 600 bash -c 'echo -e "2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./files/openvpn.sh
           # Atau jika ingin menggunakan input dari workflow_dispatch:
           # INPUT_SKIP=$(echo "${{ github.event.inputs.skip_password }}" | tr '[:upper:]' '[:lower:]')
           # if [[ "$INPUT_SKIP" == "yes" ]]; then
