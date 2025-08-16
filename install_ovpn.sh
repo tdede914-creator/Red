@@ -7,6 +7,8 @@ MYIP=$(wget -qO- ipinfo.io/ip);
 domain=$(cat /root/domain)
 MYIP2="s/xxxxxxxxx/$domain/g";
 function ovpn_install() {
+sudo apt update
+sudo apt install openvpn openvpn-plugin-auth-pam
 rm -rf /etc/openvpn
 mkdir -p /etc/openvpn
 wget -O /etc/openvpn/vpn.zip "https://github.com/bowowiwendi/WendyVpn/raw/refs/heads/ABSTRAK/ovpn/vpn.zip" >/dev/null 2>&1
