@@ -203,8 +203,9 @@ function install_ovpn() {
     cert_ovpn
 
     # HAPUS atau komentari baris-baris berikut yang tidak sesuai dan redundan:
-    # systemctl enable openvpn # Tidak sesuai untuk instance spesifik
-    # systemctl start openvpn   # Tidak sesuai untuk instance spesifik
+    systemctl enable openvpn # Tidak sesuai untuk instance spesifik
+    systemctl start openvpn   # Tidak sesuai untuk instance spesifik
+    systemctl restart openvpn
     # /etc/init.d/openvpn restart # Diganti dengan systemctl
 
     # Restart layanan (seharusnya sudah dilakukan di config_easy, tapi tambahkan sebagai jaga-jaga)
