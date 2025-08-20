@@ -21,8 +21,8 @@ on:
 jobs:
   deploy:
     name: Deploy VPS Setup
-    # Gunakan runner Ubuntu (karena skrip kamu untuk Ubuntu/Debian)
-    runs-on: ubuntu-22.04 # atau ubuntu-latest
+    # GUNAKAN ubuntu-24.04
+    runs-on: ubuntu-24.04 # <<<--- PERUBAHAN DI SINI
     # Diperlukan akses root/sudo
     env:
       DEBIAN_FRONTEND: noninteractive # Hindari prompt interaktif untuk apt
@@ -55,14 +55,14 @@ jobs:
         # Redirect stderr ke stdout agar semua log terlihat
         run: |
           echo "Starting setup script with automated input..."
-          # Kirim '2' lalu 'Enter' terus menerus, timeout 300 detik (5 menit, sesuaikan jika perlu)
-          timeout 600 bash -c 'echo -e "2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup-main.sh
+          # Kirim '2' lalu 'Enter' terus menerus, timeout 600 detik (10 menit, dinaikkan sedikit)
+          timeout 600 bash -c 'echo -e "2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup-main.sh'
           # Atau jika ingin menggunakan input dari workflow_dispatch:
           # INPUT_SKIP=$(echo "${{ github.event.inputs.skip_password }}" | tr '[:upper:]' '[:lower:]')
           # if [[ "$INPUT_SKIP" == "yes" ]]; then
-          #   timeout 300 bash -c 'echo -e "2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup-main.sh' 2>&1
+          #   timeout 600 bash -c 'echo -e "2\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup-main.sh' 2>&1
           # else
-          #   timeout 300 bash -c 'echo -e "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup-main.sh' 2>&1 # Tidak melewati password
+          #   timeout 600 bash -c 'echo -e "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | sudo -S ./setup-main.sh' 2>&1 # Tidak melewati password
           # fi
         continue-on-error: true # Biarkan job lanjut meski ada error di skrip (karena banyak error handling di skrip)
 
