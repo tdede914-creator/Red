@@ -177,11 +177,11 @@ function first_setup() {
         echo "Setup Dependencies $OS_NAME"
         sudo apt update -y
         echo "Installing haproxy from default repo for Ubuntu"
-        apt-get install -y haproxy || echo "ERROR: Gagal menginstal haproxy."
+        apt install -y haproxy || echo "ERROR: Gagal menginstal haproxy."
     elif [[ "$OS_ID" == "debian" ]]; then
         echo "Setup Dependencies For OS Is $OS_NAME"
         echo "Installing haproxy from default repo for Debian"
-        apt-get install -y haproxy || echo "ERROR: Gagal menginstal haproxy."
+        apt install -y haproxy || echo "ERROR: Gagal menginstal haproxy."
     else
         echo -e "Your OS Is Not Supported ($OS_NAME)"
         exit 1
@@ -194,7 +194,7 @@ function nginx_install() {
     echo "========== MENJALANKAN nginx_install =========="
     if [[ "$OS_ID" == "ubuntu" ]]; then
         print_install "Setup nginx For OS Is $OS_NAME"
-        sudo apt-get install nginx -y || echo "ERROR: Gagal menginstal nginx (Ubuntu)."
+        sudo apt install nginx -y || echo "ERROR: Gagal menginstal nginx (Ubuntu)."
     elif [[ "$OS_ID" == "debian" ]]; then
         print_install "Setup nginx For OS Is $OS_NAME"
         apt -y install nginx || echo "ERROR: Gagal menginstal nginx (Debian)."
@@ -217,6 +217,7 @@ function base_package() {
     apt upgrade -y
     apt dist-upgrade -y
     echo "Menginstal dan mengkonfigurasi chrony..."
+    sudo apt install -y chrony
     systemctl enable chronyd
     systemctl restart chronyd
     systemctl enable chrony
@@ -227,18 +228,19 @@ function base_package() {
     ntpdate pool.ntp.org
     echo "Menginstal utilitas sistem..."
     apt install sudo -y || echo "ERROR: Gagal menginstal sudo."
-    sudo apt-get clean all
-    sudo apt-get autoremove -y
-    sudo apt-get install -y debconf-utils || echo "ERROR: Gagal menginstal debconf-utils."
+    sudo apt clean all
+    sudo apt autoremove -y
+    sudo apt install -y debconf-utils || echo "ERROR: Gagal menginstal debconf-utils."
     echo "Menghapus paket yang tidak diinginkan..."
-    sudo apt-get remove --purge exim4 -y
-    sudo apt-get remove --purge ufw firewalld -y
+    sudo apt remove --purge exim4 -y
+    sudo apt remove --purge ufw firewalld -y
     echo "Menginstal software-properties-common..."
-    sudo apt-get install -y --no-install-recommends software-properties-common || echo "ERROR: Gagal menginstal software-properties-common."
+    sudo apt install -y --no-install-recommends software-properties-common || echo "ERROR: Gagal menginstal software-properties-common."
     echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
     echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
     echo "Menginstal paket utama..."
-    sudo apt-get install -y speedtest-cli vnstat libnss3-dev libnspr4-dev pkg-config libpam0g-dev libcap-ng-dev libcap-ng-utils libselinux1-dev libcurl4-nss-dev flex bison make libnss3-tools libevent-dev bc rsyslog dos2unix zlib1g-dev libssl-dev libsqlite3-dev sed dirmngr libxml-parser-perl build-essential gcc g++ python3 htop lsof tar wget curl ruby zip unzip p7zip-full python3-pip libc6 util-linux build-essential msmtp-mta ca-certificates bsd-mailx iptables iptables-persistent netfilter-persistent net-tools openssl ca-certificates gnupg gnupg2 ca-certificates lsb-release gcc shc make cmake git screen socat xz-utils apt-transport-https dnsutils cron bash-completion ntpdate chrony jq easy-rsa || echo "ERROR: Gagal menginstal paket utama."
+    sudo apt install -y speedtest-cli vnstat libnss3-dev libnspr4-dev pkg-config libpam0g-dev libcap-ng-dev libcap-ng-utils libselinux1-dev libcurl4-nss-dev flex bison make libnss3-tools libevent-dev bc rsyslog dos2unix zlib1g-dev libssl-dev libsqlite3-dev sed dirmngr libxml-parser-perl build-essential gcc g++ python3 htop lsof tar wget curl ruby zip unzip p7zip-full python3-pip libc6 util-linux build-essential msmtp-mta ca-certificates bsd-mailx iptables iptables-persistent net-tools openssl ca-certificates gnupg gnupg2 ca-certificates lsb-release gcc shc make cmake git screen socat xz-utils apt-transport-https dnsutils cron bash-completion ntpdate chrony jq easy-rsa || echo "ERROR: Gagal menginstal paket utama."
+    sudo apt install -y netfilter-persistent
     print_success "Packet Yang Dibutuhkan"
     echo "========== base_package SELESAI =========="
 }
@@ -518,8 +520,8 @@ function ins_dropbear(){
     clear
     print_install "Menginstall Dropbear"
     echo "Memperbarui daftar paket dan menginstal Dropbear..."
-    apt-get update -y
-    apt-get install dropbear -y || echo "ERROR: Gagal menginstal Dropbear."
+    apt update -y
+    apt install dropbear -y || echo "ERROR: Gagal menginstal Dropbear."
     echo "Mengunduh konfigurasi Dropbear..."
     wget -q -O /etc/default/dropbear "${REPO}cfg_conf_js/dropbear.conf" || echo "ERROR: Gagal mengunduh konfigurasi Dropbear."
     chmod 644 /etc/default/dropbear # Gunakan permission yang benar
