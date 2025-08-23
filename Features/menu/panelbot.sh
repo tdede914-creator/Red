@@ -74,7 +74,7 @@ cp /media/cybervpn/database.db /tmp/database.db
 # Update files
 cd /media/
 rm -rf cybervpn
-wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/bot/cybervpn.zip
+wget https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTbot/cybervpn.zip
 unzip cybervpn.zip
 rm -rf cybervpn.zip
 cd cybervpn

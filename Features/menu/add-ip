@@ -7,11 +7,11 @@ data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date |
 date_list=$(date +"%Y-%m-%d" -d "$data_server")
 
 clear
-Repo1="https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip"
+Repo1="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST"
 export MYIP=$( curl -s https://ipinfo.io/ip/ )
 SELLER=$(curl -sS ${Repo1}ip | grep $MYIP | awk '{print $2}')
 Exp=$(curl -sS ${Repo1}ip | grep $MYIP | awk '{print $3}')
-data_ip="https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip"
+data_ip="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST"
 d2=$(date -d "$date_list" +"+%s")
 d1=$(date -d "$Exp" +"+%s")
 dayleft=$(( ($d1 - $d2) / 86400 ))
@@ -31,7 +31,7 @@ BGX="\033[42m"
 END='\e[0m'
 AKTIF="VERIFIED"
 REPO="https://github.com/bowowiwendi/ipvps.git"
-REPO2="https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip"
+REPO2="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST"
 EMAIL="bowowiwendi@gmail.com"
 USER="bowowiwendi"
 

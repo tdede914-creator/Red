@@ -32,7 +32,7 @@ apt install python3 python3-pip -y
 apt install sqlite3 -y
 cd /media/
 rm -rf cybervpn
-wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/bot/cybervpn.zip
+wget https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTbot/cybervpn.zip
 unzip cybervpn.zip
 cd cybervpn
 rm var.txt

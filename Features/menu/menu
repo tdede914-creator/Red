@@ -37,8 +37,8 @@ MODEL=$(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | se
 CORE=$(printf '%-1s' "$(grep -c cpu[0-9] /proc/stat)") 
 TIMEZONE=$(printf '%(%H:%M:%S)T') 
 SERONLINE=$(uptime -p | cut -d " " -f 2-10000) 
-Repo="https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/"
-regist="https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip"
+Repo="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST"
+regist="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST"
 MYIP=$(curl -sS ipv4.icanhazip.com) 
 
 # FUNCTION DEFINITIONS

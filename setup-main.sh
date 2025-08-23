@@ -96,14 +96,14 @@ clear
 
 # --- Pengambilan Data Pengguna ---
 rm -f /usr/bin/user
-username=$(curl -s https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | grep $MYIP | awk '{print $2}')
+username=$(curl -s https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST | grep $MYIP | awk '{print $2}')
 if [ -z "$username" ]; then
     echo "WARNING: Username tidak ditemukan untuk IP $MYIP."
 else
     echo "$username" >/usr/bin/user
     echo "Username ditemukan: $username"
 fi
-valid=$(curl -s https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | grep $MYIP | awk '{print $3}')
+valid=$(curl -s https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST | grep $MYIP | awk '{print $3}')
 echo "$valid" >/usr/bin/e
 username=$(cat /usr/bin/user)
 oid=$(cat /usr/bin/ver)
@@ -124,7 +124,7 @@ mai="datediff "$Exp" "$DATE""
 Info="(${green}Active${NC})"
 Error="(${RED}ExpiRED${NC})"
 today=`date -d "0 days" +"%Y-%m-%d"`
-Exp1=$(curl -s https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | grep $MYIP | awk '{print $4}')
+Exp1=$(curl -s https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST | grep $MYIP | awk '{print $4}')
 if [[ $today < $Exp1 ]]; then
 sts="${Info}"
 else
@@ -134,7 +134,7 @@ echo -e "\e[32mloading...\e[0m"
 clear
 
 # --- Definisi Variabel ---
-REPO="https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/"
+REPO="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST"
 start=$(date +%s)
 secs_to_human() {
 echo "Installation time : $((${1} / 3600)) hours $(((${1} / 60) % 60)) minute's $((${1} % 60)) seconds"
@@ -875,13 +875,13 @@ function udp_mini(){
     # Modifikasi untuk Ubuntu 24: Pastikan limit.sh menggunakan netcat-openbsd dan python3
     # Perbaiki URL dengan menambahkan https://
     echo "Mengunduh dan menjalankan limit.sh..."
-    wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/limit.sh && chmod +x limit.sh && ./limit.sh
+    wget https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTfiles/limit.sh && chmod +x limit.sh && ./limit.sh
     # Asumsi limit.sh menangani instalasi netcat-openbsd dan dependensi lainnya dengan benar untuk Ubuntu 24
     
     # --- Bagian limit-ip ---
     echo "Mengunduh limit-ip..."
     # Perbaiki URL dengan menambahkan https://
-    wget -q -O /usr/bin/limit-ip "https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/limit-ip"
+    wget -q -O /usr/bin/limit-ip "https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTfiles/limit-ip"
     # Perbaiki permission hanya untuk file yang diunduh
     chmod +x /usr/bin/limit-ip
     # Perbaiki line endings jika diperlukan (opsional, tergantung sumber file)
@@ -919,7 +919,7 @@ EOF
     echo "Membuat direktori dan mengunduh udp-mini..."
     mkdir -p /usr/local/kyt/
     # Perbaiki URL dengan menambahkan https://
-    wget -q -O /usr/local/kyt/udp-mini "https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/udp-mini"
+    wget -q -O /usr/local/kyt/udp-mini "https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTfiles/udp-mini"
     chmod +x /usr/local/kyt/udp-mini
 
     echo "Mengunduh dan mengelola layanan udp-mini..."
@@ -927,7 +927,7 @@ EOF
     # Asumsi nama file di repo adalah udp-mini-1.service, dll.
     for i in {1..3}; do
         # Perbaiki URL dengan menambahkan https://
-        wget -q -O /etc/systemd/system/udp-mini-${i}.service "https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/udp-mini-${i}.service"
+        wget -q -O /etc/systemd/system/udp-mini-${i}.service "https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTfiles/udp-mini-${i}.service"
     done
 
     # Restart dan enable layanan (menggunakan nama yang diunduh dan disimpan)
@@ -993,8 +993,8 @@ TIMES=30
     local TIME_FORMAT=$(date '+%H:%M:%S')
 
     # --- Ambil informasi pengguna dan expired dari repo ---
-    local USRSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep "$ipsaya" | awk '{print $2}' | head -n 1)
-    local EXPSC=$(wget -qO- https://raw.githubusercontent.com/bowowiwendi/ipvps/main/main/ip | grep "$ipsaya" | awk '{print $3}' | head -n 1)
+    local USRSC=$(wget -qO- https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST | grep "$ipsaya" | awk '{print $2}' | head -n 1)
+    local EXPSC=$(wget -qO- https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST | grep "$ipsaya" | awk '{print $3}' | head -n 1)
 
     # --- Tampilkan Password atau Pesan Placeholder ---
     if [[ -z "$passwd" ]]; then
@@ -1096,7 +1096,7 @@ function install_openvpn() {
     #            mengatur sertifikat, dan mungkin membuat file konfigurasi di /etc/openvpn/server/
     echo "Mengunduh dan menjalankan skrip konfigurasi kustom..."
     # Perbaiki URL dengan menambahkan https://
-    if wget https://raw.githubusercontent.com/bowowiwendi/WendyVpn/ABSTRAK/files/openvpn -O /root/openvpn_setup.sh; then
+    if wget https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTfiles/openvpn -O /root/openvpn_setup.sh; then
         chmod +x /root/openvpn_setup.sh
         if /root/openvpn_setup.sh; then
             echo "Skrip konfigurasi kustom berhasil dijalankan."
