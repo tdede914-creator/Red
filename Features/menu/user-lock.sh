@@ -4,7 +4,7 @@ biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
 NC="\e[0m"
 RED="\033[0;31m"
 MYIP=$(curl -sS ipv4.icanhazip.com)
-Name=$(curl -sS https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTREGIST | grep $MYIP | awk '{print $2}')
+Name=$(curl -sS https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST | grep $MYIP | awk '{print $2}')
 echo $Name > /usr/local/etc/.$Name.ini
 CekOne=$(cat /usr/local/etc/.$Name.ini)
 red='\e[1;31m'

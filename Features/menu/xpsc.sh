@@ -1,7 +1,7 @@
 #!/bin/bash
 export HOME=/root
 export TERM=xterm
-REPO="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST"
+REPO="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/"
 EMAIL="bowowiwendi@gmail.com"
 USER="bowowiwendi"
 function notif-exp(){

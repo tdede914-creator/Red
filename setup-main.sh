@@ -134,7 +134,7 @@ echo -e "\e[32mloading...\e[0m"
 clear
 
 # --- Definisi Variabel ---
-REPO="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST"
+REPO="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/"
 start=$(date +%s)
 secs_to_human() {
 echo "Installation time : $((${1} / 3600)) hours $(((${1} / 60) % 60)) minute's $((${1} % 60)) seconds"
@@ -875,13 +875,13 @@ function udp_mini(){
     # Modifikasi untuk Ubuntu 24: Pastikan limit.sh menggunakan netcat-openbsd dan python3
     # Perbaiki URL dengan menambahkan https://
     echo "Mengunduh dan menjalankan limit.sh..."
-    wget https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTfiles/limit.sh && chmod +x limit.sh && ./limit.sh
+    wget https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/files/limit.sh && chmod +x limit.sh && ./limit.sh
     # Asumsi limit.sh menangani instalasi netcat-openbsd dan dependensi lainnya dengan benar untuk Ubuntu 24
     
     # --- Bagian limit-ip ---
     echo "Mengunduh limit-ip..."
     # Perbaiki URL dengan menambahkan https://
-    wget -q -O /usr/bin/limit-ip "https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTfiles/limit-ip"
+    wget -q -O /usr/bin/limit-ip "https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/files/limit-ip"
     # Perbaiki permission hanya untuk file yang diunduh
     chmod +x /usr/bin/limit-ip
     # Perbaiki line endings jika diperlukan (opsional, tergantung sumber file)
@@ -919,7 +919,7 @@ EOF
     echo "Membuat direktori dan mengunduh udp-mini..."
     mkdir -p /usr/local/kyt/
     # Perbaiki URL dengan menambahkan https://
-    wget -q -O /usr/local/kyt/udp-mini "https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTfiles/udp-mini"
+    wget -q -O /usr/local/kyt/udp-mini "https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/files/udp-mini"
     chmod +x /usr/local/kyt/udp-mini
 
     echo "Mengunduh dan mengelola layanan udp-mini..."
@@ -927,7 +927,7 @@ EOF
     # Asumsi nama file di repo adalah udp-mini-1.service, dll.
     for i in {1..3}; do
         # Perbaiki URL dengan menambahkan https://
-        wget -q -O /etc/systemd/system/udp-mini-${i}.service "https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTfiles/udp-mini-${i}.service"
+        wget -q -O /etc/systemd/system/udp-mini-${i}.service "https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/files/udp-mini-${i}.service"
     done
 
     # Restart dan enable layanan (menggunakan nama yang diunduh dan disimpan)
@@ -1096,7 +1096,7 @@ function install_openvpn() {
     #            mengatur sertifikat, dan mungkin membuat file konfigurasi di /etc/openvpn/server/
     echo "Mengunduh dan menjalankan skrip konfigurasi kustom..."
     # Perbaiki URL dengan menambahkan https://
-    if wget https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTfiles/openvpn -O /root/openvpn_setup.sh; then
+    if wget https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/files/openvpn -O /root/openvpn_setup.sh; then
         chmod +x /root/openvpn_setup.sh
         if /root/openvpn_setup.sh; then
             echo "Skrip konfigurasi kustom berhasil dijalankan."

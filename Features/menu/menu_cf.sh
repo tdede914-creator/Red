@@ -329,7 +329,7 @@ case $option in
     delet_subdo
     ;;
   8)
-    wget https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTfiles/random.sh && chmod +x random.sh && ./random.sh
+    wget https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/files/random.sh && chmod +x random.sh && ./random.sh
     rm -f /root/random.sh
     ;;
   0)

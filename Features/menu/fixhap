@@ -61,7 +61,7 @@ clear
 
 
 
-REPO="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTcfg_conf_js/"
+REPO="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/cfg_conf_js/"
 # fixhap fix Haproxy
 clear
 echo -e "${BlueCyan} ─────────────────── ${Xark} "

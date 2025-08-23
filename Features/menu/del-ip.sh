@@ -17,8 +17,8 @@ dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Dat
 date_list=$(date +"%Y-%m-%d" -d "$dateFromServer")
 
 # Konfigurasi repo dan variabel
-REPO="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST"
-REPO2="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST"
+REPO="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/"
+REPO2="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/"
 EMAIL="bowowiwendi@gmail.com"
 USER="bowowiwendi"
 
