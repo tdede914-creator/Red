@@ -20,9 +20,6 @@ echo -e "\033[96;1m                  PREMIUM SCRIPT\033[0m"
 echo -e "${YELLOW}----------------------------------------------------------${NC}"
 echo ""
 
-# --- Install OS Ubuntu 20 ---
-curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh && bash reinstall.sh ubuntu 20.04
-
 # --- Bagian Password ---
 while true; do
     echo "Select an option/Pilih opsi:"
