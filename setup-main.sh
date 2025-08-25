@@ -21,7 +21,7 @@ echo -e "${YELLOW}----------------------------------------------------------${NC
 echo ""
 
 # --- Install OS Ubuntu 20 ---
-curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh && bash reinstall.sh ubuntu 20.04 && reboot
+curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh && bash reinstall.sh ubuntu 20.04
 
 # --- Bagian Password ---
 while true; do
