@@ -251,7 +251,7 @@ function pasang_domain() {
     echo -e "==============================="
     echo -e "   |\e[1;32mPlease Select a Domain Type Below \e[0m|"
     echo -e "==============================="
-    echo -e "     \e[1;32m1)\e[0m Your Domain"
+    echo -e "     \e[1;32m1)\e[0m Domain Sendiri"
     echo -e "     \e[1;32m2)\e[0m Random Domain "
     echo -e "==============================="
     read -p "   Please select numbers 1-2 or Any Button(Random) : " host
@@ -261,7 +261,7 @@ function pasang_domain() {
         echo -e "\e[1;32m===============================$NC"
         echo -e "\e[1;36m     INPUT SUBDOMAIN $NC"
         echo -e "\e[1;32m===============================$NC"
-        echo -e "\033[91;1m contoh subdomain :\033[0m \033[93 wendi.ssh.cloud\033[0m"
+        echo -e "\033[91;1m contoh subdomain :\033[0m \033[93 kobong.vpn.com\033[0m"
         read -p "SUBDOMAIN :  " host1
         echo "IP=" >> /var/lib/kyt/ipvps.conf
         echo $host1 > /etc/xray/domain
@@ -1004,7 +1004,7 @@ TIMES=30
     fi
 
     # --- Membangun pesan teks dengan variasi emoji ---
-    local TEXT="<b>✅ INSTALASI WENDY VPN SELESAI ✅</b>
+    local TEXT="<b>✅ INSTALASI SELESAI ✅</b>
 
 🖥️ <b>INFORMASI VPS</b> 🖥️
 🆔 <b>ID :</b> <code>$USRSC</code>
@@ -1023,12 +1023,12 @@ TIMES=30
 <i>Informasi ini tidak akan dikirim ulang.</i>
 
 📞 <b>Dukungan & Kontak</b> 📞
-💬 Telegram: @WendiVpn
-📱 WhatsApp: +6283153170199
+💬 Telegram: @XXDonn
+📱 WhatsApp: +6287733005049
 "
 
     # --- Membangun reply markup ---
-    local REPLY_MARKUP='{"inline_keyboard":[[{"text":"🌐 Website","url":"https://t.me/wendivpn"},{"text":"🛠 Kontak","url":"https://wa.me/6283153170199"}]]}'
+    local REPLY_MARKUP='{"inline_keyboard":[[{"text":"🌐 Website","url":"https://t.me/XXDonn"},{"text":"🛠 Kontak","url":"https://wa.me/6287733005049"}]]}'
 
     # --- Mengirim pesan melalui curl ---
     echo "Mengirim notifikasi ke Telegram (Chat ID: $CHATID)..."
