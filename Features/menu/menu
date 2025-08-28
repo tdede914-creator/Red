@@ -302,7 +302,6 @@ echo -e " ${z}╰═════════════════════
 echo -e " ${z}│ ${NC}$z     SSH$NC : $status_ssh" "       $z NGINX$NC : $status_nginx" "        $z XRAY$NC : $status_xray   $NC${z}│$NC" 
 echo -e " ${z}│ ${NC}$z WS-ePRO$NC : $status_ws_epro" "    $z DROPBEAR$NC : $status_dropbear" "     $z HAPROXY$NC : $status_haproxy   $NC${z}│$NC"
 echo -e " ${z}╰══════════════════════════════════════════════════════════╯${NC}"
-echo -e "      ${AQUOS}YESTERDAY: ${tyest} NOW: ${ttoday} MONTH: ${tmon}${NC}"
 echo -e "       ───────────────────────────────────────────────${NC}"
 echo -e "           ${z}SSH/OPENVPN${NC}    $y➡️$NC $ssh1${NC}" "$a"
 echo -e "           ${z}VMESS/WS/GRPC${NC}  $y➡️$NC $vmc${NC}" "$a"
