@@ -7,22 +7,22 @@ clear
 ipsaya=$(wget -qO- ipinfo.io/ip)
 data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 date_list=$(date +"%Y-%m-%d" -d "$data_server")
-data_ip="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGISTREGIST"
+data_ip="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/REGIST"
 checking_sc() {
   useexp=$(wget -qO- $data_ip | grep $ipsaya | awk '{print $3}')
   if [[ $date_list < $useexp ]]; then
     echo -ne
   else
     echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
-    echo -e "\033[42m          404 NOT FOUND AUTOSCRIPT          \033[0m"
+    echo -e "\033[42m          IZIN TIDAK DITEMUKAN          \033[0m"
     echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
     echo -e ""
     echo -e "            ${RED}PERMISSION DENIED !${NC}"
     echo -e "   \033[0;33mYour VPS${NC} $ipsaya \033[0;33mHas been Banned${NC}"
     echo -e "     \033[0;33mBuy access permissions for scripts${NC}"
     echo -e "             \033[0;33mContact Admin :${NC}"
-    echo -e "      \033[0;36mTelegram${NC} t.me/WendiVpn"
-    echo -e "      ${GREEN}WhatsApp${NC} wa.me/6283153170199"
+    echo -e "      \033[0;36mTelegram${NC} t.me/XXDonn"
+    echo -e "      ${GREEN}WhatsApp${NC} wa.me/6287733005049"
     echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
     exit
   fi
@@ -32,8 +32,8 @@ clear
 # Getting
 
 # // BOT
-export CHATID="6617783693"
-export KEY="6816696268:AAGsxJLwVlsb7_TqE401akfwMcZOZDTnC2s"
+export CHATID="1431384977"
+export KEY="7660217485:AAHyPV9QvfEVQm-BSctLA1pp-iQAiEQlDlc"
 export TIME="10"
 export URL="https://api.telegram.org/bot$KEY/sendMessage"
 
