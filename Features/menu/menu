@@ -20,7 +20,7 @@ FIGLET_FILE="/usr/bin/figlet_text"
 if [[ -f "$FIGLET_FILE" ]]; then
     FIGLET_TEXT=$(cat "$FIGLET_FILE")
 else
-    FIGLET_TEXT="${FIGLET_TEXT:-SHL STORE}"
+    FIGLET_TEXT="${FIGLET_TEXT:-XXDonn}"
 fi
 
 # SYSTEM INFORMATION
@@ -44,8 +44,8 @@ MYIP=$(curl -sS ipv4.icanhazip.com)
 # FUNCTION DEFINITIONS
 function vpsoff(){
     TIME="10"
-    CHATID="5162695441"
-    KEY="7117869623:AAHBmgzOUsmHBjcm5TFir9JmaZ_X7ynMoF4"
+    CHATID="1431384977"
+    KEY="7660217485:AAHyPV9QvfEVQm-BSctLA1pp-iQAiEQlDlc"
     URL="https://api.telegram.org/bot$KEY/sendMessage"
     TEXT="<code>──────────────────────────────────</code>
 <b>⚠️ YOUR SC VPS EXPIRED ⚠️</b>
