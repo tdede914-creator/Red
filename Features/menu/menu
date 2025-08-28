@@ -20,7 +20,7 @@ FIGLET_FILE="/usr/bin/figlet_text"
 if [[ -f "$FIGLET_FILE" ]]; then
     FIGLET_TEXT=$(cat "$FIGLET_FILE")
 else
-    FIGLET_TEXT="${FIGLET_TEXT:-XXDonn}"
+    FIGLET_TEXT="${FIGLET_TEXT:-KobongSrv}"
 fi
 
 # SYSTEM INFORMATION
@@ -283,7 +283,7 @@ fi
 echo -e " "
 figlet "$FIGLET_TEXT" | lolcat
 echo -e " ${z}╭══════════════════════════════════════════════════════════╮${NC}"
-echo -e " ${z}│${AQUOS}     ${KIRI}Welcome To Script Premium t.me/$FIGLET_TEXT${KANAN}      $NC${z}$NC"  
+echo -e " ${z}│${AQUOS}     ${KIRI}SCRIPT PREMIUM INFORMATION{KANAN}      $NC${z}$NC"  
 echo -e " ${z}╭══════════════════════════════════════════════════════════╮${NC}"
 echo -e " ${z}│$NC$r ⇲ $NC$z System OS ${NC}     $z   =   $grenbo $MODEL${NC}"
 echo -e " ${z}│$NC$r ⇲ $NC$z Server RAM ${NC}    $z   =   $grenbo $uram/$RAM MB ${NC}"
