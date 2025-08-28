@@ -1,4 +1,4 @@
-wget https://github.com/bowowiwendi/backup/raw/refs/heads/main/Botdo.zip
+wget https://github.com/Dikajuana/botvpn/raw/refs/heads/main/Botdo.zip
 mv Botdo /usr/bin/
 rm -rf Botdo.zip
 pip3.8 install -r /usr/bin/Botdo/requirements.txt
