@@ -8,9 +8,9 @@ date_list=$(date +"%Y-%m-%d" -d "$dateFromServer")
 clear
 
 # Konfigurasi repo dan variabel
-Repo1="https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip"
-EMAIL="bowowiwendi@gmail.com"
-USER="bowowiwendi"
+Repo1="https://raw.githubusercontent.com/bowowiwendi/tdede914-creator/ipvps.git"
+EMAIL="tdede914@gmail.com"
+USER="tdede914-creator"
 
 # Warna untuk output
 RED='\033[0;31m'
@@ -64,7 +64,7 @@ git init &> /dev/null
 git add . &> /dev/null
 git commit -m "update file" &> /dev/null
 git branch -M main &> /dev/null
-git remote add origin git@github.com:bowowiwendi/ipvps.git
+git remote add origin git@github.com/tdede914-creator/ipvps.git
 git push -f origin main &> /dev/null
 
 # Mengirim log dan membersihkan
