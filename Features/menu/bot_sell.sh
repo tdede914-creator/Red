@@ -1,20 +1,20 @@
 #!/bin/bash
 function checking_sc() {
     MYIP=$(curl -sS ipv4.icanhazip.com)
-    IZIN=$(curl -sS https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip | awk '{print $4}')
+    IZIN=$(curl -sS https://raw.githubusercontent.com/tdede914-creator/ipvps/main/ip | awk '{print $4}')
 
     if echo "$IZIN" | grep -wq "$MYIP"; then
         echo "IZIN DITERIMA "
     else
         echo -e "\e[38;5;162m────────────────────────────────────────────\033[0m"
-        echo -e "\033[44m          404 NOT FOUND AUTOSCRIPT          \033[0m"
+        echo -e "\033[44m          IZIN TIDAK DITEMUKAN          \033[0m"
         echo -e "\e[38;5;162m────────────────────────────────────────────\033[0m"
         echo -e ""
         echo -e "           \e[38;5;196mPERMISSION DENIED !\033[0m"
         echo -e "  \033[0;36mYour VPS IP $MYIP has been banned.\033[0m"
         echo -e "    \033[0;36mBuy access permissions for scripts.\033[0m"
         echo -e "            \033[0;36mContact Admin :\033[0m"
-        echo -e "     \033[2;32mWhatsApp\033[0m https://wa.me/6283153170199"
+        echo -e "     \033[2;32mWhatsApp\033[0m https://wa.me/6287733005049"
         echo -e "\e[38;5;162m────────────────────────────────────────────\033[0m"
         exit 1  # Exit with non-zero status to indicate failure // Lunatix
     fi
