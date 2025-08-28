@@ -56,7 +56,7 @@ git init &> /dev/null
 git add . &> /dev/null
 git commit -m "update file" &> /dev/null
 git branch -M main &> /dev/null
-git remote add origin git@github.com:bowowiwendi/ipvps.git
+git remote add origin git@github.com/tdede914-creator/ipvps.git
 git push -f origin main &> /dev/null
 
 # Mengirim notifikasi ke Telegram
