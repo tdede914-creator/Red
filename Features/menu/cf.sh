@@ -199,7 +199,7 @@ TEXT="
 <b>WILCARD :</b> <code>$wilcard </code>
 <code>◇━━━━━━━━━━━━━━◇</code>
 <code>NEW ADD DOMAIN</code>
-<code>BY BOT : @WENDIVPN_BOT</code>
+<code>BY BOT : @KCSORDER_bot</code>
 "
 curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 }
