@@ -30,7 +30,7 @@ YELL='\033[1;33m'
 BGX="\033[42m"
 END='\e[0m'
 AKTIF="VERIFIED"
-REPO="https://github.com/bowowiwendi/ipvps.git"
+REPO="https://github.com/tdede914-creator/ipvps.git"
 REPO2="https://raw.githubusercontent.com/tdede914-creator/Red/refs/heads/ABSTRAK/"
 EMAIL="bowowiwendi@gmail.com"
 USER="bowowiwendi"
@@ -100,7 +100,7 @@ URL="https://api.telegram.org/bot$KEY/sendMessage"
     git add . &> /dev/null
     git commit -m "update file" &> /dev/null
     git branch -M main &> /dev/null
-    git remote add origin git@github.com:bowowiwendi/ipvps.git
+    git remote add origin gitgithub.com/tdede914-creator/ipvps.git
     git push -f origin main &> /dev/null
     rm -rf /root/ipvps
     clear
@@ -175,7 +175,7 @@ URL="https://api.telegram.org/bot$KEY/sendMessage"
     git add . &> /dev/null
     git commit -m "update file" &> /dev/null
     git branch -M main &> /dev/null
-    git remote add origin git@github.com:bowowiwendi/ipvps.git
+    git remote add origin git@github.com/tdede914-creator/ipvps.git
     git push -f origin main &> /dev/null
     rm -rf /root/ipvps
     clear
@@ -249,7 +249,7 @@ URL="https://api.telegram.org/bot$KEY/sendMessage"
     git add . &> /dev/null
     git commit -m "update file" &> /dev/null
     git branch -M main &> /dev/null
-    git remote add origin git@github.com:bowowiwendi/ipvps.git
+    git remote add origin git@github.com/tdede914-creator/ipvps.git
     git push -f origin main &> /dev/null
     rm -rf /root/ipvps
     clear
