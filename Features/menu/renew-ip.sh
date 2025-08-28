@@ -12,9 +12,9 @@ BGX="\033[42m"
 END='\e[0m'
 
 # Konfigurasi
-REPO="https://raw.githubusercontent.com/bowowiwendi/ipvps/main/ip"
-EMAIL="bowowiwendi@gmail.com"
-USER="bowowiwendi"
+REPO="https://raw.githubusercontent.com/tdede914-creator/ipvps/main/ip"
+EMAIL="tdede914@gmail.com"
+USER="tdede914-creator"
 TIMES="10"
 
 # Ambil informasi tanggal dari server Google
@@ -56,7 +56,7 @@ git init &> /dev/null
 git add . &> /dev/null
 git commit -m "update file" &> /dev/null
 git branch -M main &> /dev/null
-git remote add origin git@github.com:bowowiwendi/ipvps.git
+git remote add origin git@github.com:tdede914-creator/ipvps.git
 git push -f origin main &> /dev/null
 
 # Kirim notifikasi ke Telegram
