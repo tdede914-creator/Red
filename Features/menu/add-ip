@@ -57,7 +57,7 @@ URL="https://api.telegram.org/bot$KEY/sendMessage"
     exit 0
     fi
     echo -e ""
-    read -p "  Input Username IP (Example : Wendy) : " name
+    read -p "  Input Username IP (Example : XXDonn) : " name
     #name=H6EFctYeZ3DqOWSaiXjtT1u8`</dev/urandom tr -dc A-Z0-9 | head -c4`
     echo -e ""
     clear
