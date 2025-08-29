@@ -8,7 +8,7 @@ date_list=$(date +"%Y-%m-%d" -d "$dateFromServer")
 clear
 
 # Konfigurasi repo dan variabel
-Repo1="https://raw.githubusercontent.com/bowowiwendi/tdede914-creator/ipvps.git"
+Repo1="https://raw.githubusercontent.com/tdede914-creator/ipvps.git"
 EMAIL="tdede914@gmail.com"
 USER="tdede914-creator"
 
