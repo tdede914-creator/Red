@@ -1,165 +1,170 @@
 # Setup Guide — KOBONG VPN BOT
 
-**Bot ini pakai polling ke Pakasir (bukan webhook).** Artinya:
-
-- ✅ **Tidak butuh domain**
-- ✅ **Tidak butuh TLS certificate**
-- ✅ **Tidak butuh reverse proxy (Caddy/Nginx)**
-- ✅ **Bisa jalan di VPS behind NAT**
-
-Bot cukup punya akses **outbound internet** untuk polling Pakasir tiap 10 detik.
+Bot ini pakai **systemd + Python venv**, tanpa Docker. Tidak butuh domain, TLS cert, atau reverse proxy karena payment pakai polling.
 
 ---
 
-## 1. Prasyarat
+## 📋 Yang Harus Disiapkan Dulu
 
-| | |
-|---|---|
-| Server bot | VPS 1 vCPU / 512 MB RAM (Ubuntu 22.04 / Debian 12 recommended) |
-| Python | 3.12+ (jika tidak pakai Docker) |
-| Bot token | dari [@BotFather](https://t.me/BotFather) |
-| Telegram ID | dari [@userinfobot](https://t.me/userinfobot) |
-| Pakasir | akun di [app.pakasir.com](https://app.pakasir.com) — buat project, catat slug & api key |
+Ambil dulu SEMUA ini sebelum SSH ke VPS bot (biar gak bolak-balik):
 
-**Yang TIDAK diperlukan** (jangan buat sendiri capek):
-- ~~Domain~~
-- ~~SSL cert~~
-- ~~Reverse proxy~~
-- ~~Webhook URL~~
+| # | Bahan | Cara Ambil |
+|---|-------|------------|
+| 1 | **VPS untuk bot** | Ubuntu 22.04 / Debian 12, min 1 vCPU + 512 MB RAM. **Pisah dari VPS target VPN.** |
+| 2 | **Bot Token Telegram** | Chat [@BotFather](https://t.me/BotFather) → `/newbot` → nama → username → dapat token `1234567890:AAH...` |
+| 3 | **Telegram User ID kamu** | Chat [@userinfobot](https://t.me/userinfobot) → auto-reply ID |
+| 4 | **Akun Pakasir** (opsional, buat payment) | Daftar di [pakasir.com](https://pakasir.com) → buat project → catat **slug** + **API key** |
+
+**Yang TIDAK diperlukan:**
+- ~~Domain~~ ~~SSL cert~~ ~~Reverse proxy~~ ~~Webhook URL~~
 
 ---
 
-## 2. Persiapan Environment
+## 🚀 Instalasi (Satu Baris)
 
-### Generate Fernet key
-```bash
-python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-```
-Simpan key ini di `FERNET_KEY`. **Kalau hilang, semua kredensial VPS di DB tidak bisa didekripsi**.
-
-### Isi `.env`
-```bash
-cp .env.example .env
-nano .env
-```
-
-Wajib diisi:
-- `BOT_TOKEN`
-- `BOT_USERNAME` (tanpa @)
-- `SUPER_ADMIN_IDS` (comma-separated telegram user IDs)
-- `FERNET_KEY`
-- `PAKASIR_SLUG`, `PAKASIR_API_KEY` (kalau mau enable payment)
-
-Yang bisa dibiarkan default:
-- `PAKASIR_METHOD=qris`
-- `PAKASIR_BASE_URL=https://app.pakasir.com`
-
----
-
-## 3. Deploy (Docker Compose — Recommended)
+SSH sebagai root ke VPS bot, lalu:
 
 ```bash
-docker compose up -d --build
-docker compose logs -f bot
+bash <(curl -fsSL https://raw.githubusercontent.com/tdede914-creator/Red/feat/kobong-vpn-bot-m1/kobong-vpn-bot/install-bot.sh)
 ```
 
-Log yang bagus:
-```
-[INFO] kobong: KOBONG VPN BOT v0.1.0 starting up…
-[INFO] kobong.db: Database initialized
-[INFO] payment_poller: Payment poller started: resumed 0 pending order(s)
-[INFO] kobong: ✅ Bot online. Admin IDs: [1234567890]
-[INFO] kobong: 💰 Pakasir: ENABLED (polling every 10s)
-```
+Installer bakal:
+1. Deteksi OS & install python3.12 + git + build tools
+2. Clone repo ke `/opt/kobong-vpn-bot`
+3. Bikin virtualenv + install requirements
+4. Prompt kamu untuk 4 field: bot token, username, admin ID, Pakasir creds
+5. Auto-generate `FERNET_KEY`
+6. Tulis `.env` (permissions 600)
+7. Bikin user sistem `kobong` + systemd unit
+8. Enable + start service
 
-Restart / stop:
-```bash
-docker compose restart bot
-docker compose down
+Setelah selesai, kamu bakal lihat:
+
+```
+✅ KOBONG VPN BOT terinstall!
+
+  Install dir : /opt/kobong-vpn-bot
+  Service     : kobong-vpn-bot
+  Env file    : /opt/kobong-vpn-bot/.env
+  Log file    : /opt/kobong-vpn-bot/logs/bot.log
 ```
 
 ---
 
-## 4. Deploy (systemd, manual — tanpa Docker)
-
-```bash
-sudo apt install -y python3.12 python3.12-venv
-python3.12 -m venv /opt/kobong-vpn-bot/.venv
-cd /opt/kobong-vpn-bot
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# Systemd unit
-sudo tee /etc/systemd/system/kobong-vpn-bot.service > /dev/null <<'EOF'
-[Unit]
-Description=KOBONG VPN BOT
-After=network.target
-
-[Service]
-Type=simple
-User=kobong
-WorkingDirectory=/opt/kobong-vpn-bot
-Environment=PYTHONUNBUFFERED=1
-EnvironmentFile=/opt/kobong-vpn-bot/.env
-ExecStart=/opt/kobong-vpn-bot/.venv/bin/python -m bot
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload
-sudo systemctl enable --now kobong-vpn-bot
-sudo journalctl -u kobong-vpn-bot -f
-```
-
----
-
-## 5. Test
+## ✅ Test
 
 1. Chat bot kamu di Telegram → `/start`
-2. Cek profil kamu sebagai `SUPER ADMIN`
-3. Klik **💰 Top Up Saldo → Rp 10.000 → QRIS**
-4. Bot buat transaksi di Pakasir → kasih tombol "💳 Bayar Sekarang"
-5. Klik tombol → buka halaman bayar Pakasir dengan QR
-6. Kamu bayar (atau simulate di dashboard Pakasir)
-7. Dalam maks 10 detik, bot deteksi status `completed` via polling → saldo auto-terisi + notif Telegram
+2. Cek banner KOBONG muncul + status `👑 SUPER ADMIN`
+3. Klik **🖥 VPS: [➕ Tambah VPS]** → wizard 6-step
+4. Setelah VPS ter-registered → klik **🚀 Install Stack** → tunggu progress bar
+5. Setelah "✅ Selesai!", coba:
+   - **🔐 SSH → Buat Akun** → username + durasi → dapat config text
+   - **🚀 ZIVPN → Buat Akun** → label + durasi → dapat config
 
-## Troubleshooting
+---
 
-**Bot tidak respons `/start`**
-- Cek `docker compose logs bot`
-- Pastikan `BOT_TOKEN` valid: `curl https://api.telegram.org/bot${BOT_TOKEN}/getMe`
+## 🐛 Troubleshooting
 
-**Payment stuck di pending**
-- Cek log bot: `docker compose logs bot | grep -i poll`
-- Harusnya ada baris `Poll KBG-xxx [1/60]: status=pending` tiap 10 detik
-- Kalau tidak ada → poller crash, cek stack trace di log
-- Kalau ada tapi status selalu `pending`, cek langsung di dashboard Pakasir
+### Cek log
+```bash
+tail -f /opt/kobong-vpn-bot/logs/bot.log
+# atau
+journalctl -u kobong-vpn-bot -f
+```
 
-**`FERNET_KEY placeholder error`**
-- `.env` masih pakai nilai template. Generate baru pakai command di step 2.
+### Bot tidak respons `/start`
+```bash
+systemctl status kobong-vpn-bot
+grep BOT_TOKEN /opt/kobong-vpn-bot/.env
+curl "https://api.telegram.org/bot$(grep BOT_TOKEN /opt/kobong-vpn-bot/.env | cut -d= -f2)/getMe"
+```
+Kalau `getMe` return `{"ok":true,...}` → token valid. Kalau `false` → token salah/di-revoke.
 
-**Database locked**
-- SQLite lock issue kalau banyak concurrent writes. Migrasi ke Postgres:
-  ```
-  DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/kobong
-  ```
+### `pydantic.ValidationError` di log
+Env belum lengkap. Cek `.env`:
+```bash
+cat /opt/kobong-vpn-bot/.env | grep -v '^#' | grep -v '^$'
+```
+Harus ada minimal `BOT_TOKEN`, `SUPER_ADMIN_IDS`, `FERNET_KEY`.
 
-**Payment berhasil tapi saldo tidak nambah**
-- Buka `data/kobong.db` cek tabel `orders`:
-  ```bash
-  docker compose exec bot python -c "
-  import asyncio
-  from sqlalchemy import select
-  from bot.db import get_session
-  from bot.models import Order
-  async def main():
-      async with get_session() as s:
-          for o in (await s.execute(select(Order).limit(10))).scalars():
-              print(o.order_ref, o.status.value, o.amount)
-  asyncio.run(main())
-  "
-  ```
-- Kalau `status=completed` tapi user balance tidak nambah → race condition, hubungi admin
+### `FERNET_KEY placeholder error`
+Env `.env` masih pakai `CHANGE_ME_TO_A_REAL_FERNET_KEY`. Fix:
+```bash
+NEW_KEY=$(/opt/kobong-vpn-bot/.venv/bin/python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+sed -i "s|^FERNET_KEY=.*|FERNET_KEY=${NEW_KEY}|" /opt/kobong-vpn-bot/.env
+systemctl restart kobong-vpn-bot
+```
+Note: kalau kamu sudah pernah add VPS, kredensial di DB tidak bisa didekripsi setelah key diganti. Hapus DB:
+```bash
+rm /opt/kobong-vpn-bot/data/kobong.db
+systemctl restart kobong-vpn-bot
+```
+
+### Install VPS gagal / stuck di stage tertentu
+Cek log install di VPS target:
+```bash
+ssh root@<target-vps>
+tail -100 /var/log/kobong-install.log
+```
+
+### SSH ke target VPS gagal dari bot
+- Cek target VPS OS: `cat /etc/os-release` — harus Ubuntu 20+ / Debian 10+
+- Cek firewall di target: port SSH terbuka (`ufw status`)
+- Coba manual dari VPS bot: `ssh -o StrictHostKeyChecking=no root@<ip>`
+
+### Payment stuck di pending
+Cek log:
+```bash
+tail -f /opt/kobong-vpn-bot/logs/bot.log | grep -i poll
+```
+Harusnya muncul `Poll KBG-xxx [n/60]: status=pending` tiap 10 detik. Kalau tidak ada, poller crash.
+
+### ZIVPN service tidak start di target VPS
+```bash
+ssh root@<target-vps>
+journalctl -u kobong-zivpn -n 50 --no-pager
+cat /etc/kobong/zivpn/config.json | jq .
+```
+
+---
+
+## 🔧 Perintah Rutin
+
+```bash
+# Restart bot
+systemctl restart kobong-vpn-bot
+
+# Update dari GitHub
+cd /opt/kobong-vpn-bot
+sudo -u kobong git pull
+sudo -u kobong /opt/kobong-vpn-bot/.venv/bin/pip install -r requirements.txt
+systemctl restart kobong-vpn-bot
+
+# Backup
+sudo tar czf ~/kobong-backup-$(date +%Y%m%d).tar.gz -C /opt/kobong-vpn-bot data .env
+
+# Edit env (misal ubah harga)
+sudo nano /opt/kobong-vpn-bot/.env
+sudo systemctl restart kobong-vpn-bot
+
+# Uninstall bot (interaktif — nanya mau backup data atau tidak)
+sudo bash /opt/kobong-vpn-bot/uninstall-bot.sh
+```
+
+---
+
+## 🎛️ Konfigurasi Lanjutan (Edit `.env`)
+
+```dotenv
+# Harga per 30 hari (Rupiah). Diproporsionalkan otomatis untuk durasi lain.
+DEFAULT_PRICE_SSH=5000
+DEFAULT_PRICE_ZIVPN=10000
+
+# Concurrent SSH sessions max
+SSH_POOL_SIZE=10
+
+# DEBUG untuk troubleshooting lebih detail
+LOG_LEVEL=INFO   # DEBUG / INFO / WARNING / ERROR
+```
+
+Setelah edit, `systemctl restart kobong-vpn-bot`.

@@ -1,95 +1,97 @@
 # Roadmap — KOBONG VPN BOT
 
-## M1 — Scaffold & Fondasi ✅ (delivered)
+## ✅ M1 — Scaffold & Fondasi (done)
 
-**What's in:**
+- Project structure, requirements, systemd installer (no Docker)
+- Pydantic-based config with `.env` validation
+- Async SQLAlchemy ORM: `User`, `VPS`, `Account`, `Order`, `Product`
+- Fernet-based encryption for VPS credentials
+- KOBONG banner + full menu keyboards (14 sections)
+- `/start` with role-aware main menu
+- Pakasir Python client (polling-based, no webhook)
+- Background `PaymentPoller` (crash-safe resume)
+- Fresh install scripts (no WendyVpn refs)
 
-- ✅ Project structure, requirements, Dockerfile, docker-compose
-- ✅ Pydantic-based config with `.env` validation
-- ✅ Async SQLAlchemy ORM: `User`, `VPS`, `Account`, `Order`, `Product`
-- ✅ Fernet-based encryption module for VPS credentials
-- ✅ Full menu keyboard skeleton (14 sections matching VPS terminal menu)
-- ✅ `/start` command with KOBONG banner + role-aware main menu
-- ✅ Pakasir Python client (create + detail — polling-based, no webhook)
-- ✅ Background PaymentPoller (10s interval, 10-min window, crash-safe resume)
-- ✅ Fresh install scripts (`kobong-install.sh`, `install_zivpn.sh`) — NO WendyVpn references
-- ✅ ZIVPN UDP installer with DNAT range 6000-19999
-- ✅ Zero-config deployment (no domain / TLS / reverse proxy required)
+## ✅ M2 — VPS Registration & Install Automation (done)
 
-**Test criteria before M2:**
-- [ ] `docker compose up -d` starts without error
-- [ ] `/start` shows KOBONG banner and inline menu
-- [ ] Every menu button responds (even if stub says "coming in M2")
-- [ ] `💰 Top Up Saldo → Rp 10.000 → QRIS` creates a real Pakasir transaction
-- [ ] Bot logs `Poll KBG-xxx [1/60]: status=pending` every 10 seconds
-- [ ] Paying (or simulating) the transaction on Pakasir dashboard credits balance auto within 10-20s
+- ConversationHandler wizard `➕ Tambah VPS` (label → host → port → user → creds → verify)
+- `KobongSSH` async wrapper + `SSHConnectionPool` (semaphore-limited)
+- `verify_credentials()` runs full login test before saving to DB
+- Credentials encrypted with Fernet before persist
+- Auto-delete user's password message from chat history
+- `InstallOrchestrator`: upload scripts → run with live stdout tail →
+  parse stage markers → **live progress bar via edit-message**
+- 30-min hard timeout, error surfacing with log tail
+- VPS status transitions: `pending → installing → active/error`
+- Auto-populate `installed_protocols` after success
 
----
+## ✅ M3 — SSH Account CRUD (done)
 
-## M2 — VPS Registration & Install Automation
+- `services/ssh_accounts.py` — remote `useradd` + `chpasswd` + `chage -E`
+- kobong-ssh group marker for safe tracking
+- Restricted shell (`/bin/false`) — tunneling only, no shell access
+- Balance deduction with automatic refund on remote failure
+- Config text output ready-to-paste into SSH tunnel apps
+- Flows: **Create / List / Delete / Renew** — all inline
+- Duration-proportional pricing (default: Rp 5000 / 30 days)
 
-- [ ] Conversation handler untuk wizard `➕ Tambah VPS`
-- [ ] `asyncssh` pool + connection retry
-- [ ] Verifikasi SSH login otomatis setelah input kredensial
-- [ ] Upload `kobong-install.sh` ke VPS + jalankan pakai `screen`/`tmux`
-- [ ] Live progress streaming via SSH stdout tail → edit-message di Telegram
-- [ ] Save `installed_protocols` ke DB setelah selesai
-- [ ] `/status <vps>` command untuk cek services di VPS
+## ✅ M4 — ZIVPN Account CRUD (done)
 
----
-
-## M3 — Xray Account CRUD
-
-- [ ] Refactor bash scripts jadi JSON output
-- [ ] `createvmess`, `createvless`, `createtrojan`, `createshadowsocks` remote via SSH
-- [ ] Parse output → simpan ke `Account` table
-- [ ] Kirim config text + QR code ke user
-- [ ] `List` akun dengan pagination
-- [ ] `Renew` (extend expiry, potong saldo)
-- [ ] `Delete` (soft-delete di DB, hapus di server)
-- [ ] `Lock/Unlock` (disable tanpa hapus)
-- [ ] `Cek Login` (jumlah IP aktif)
+- Password-based auth via `/etc/kobong/zivpn/config.json`
+- Idempotent read → modify → write JSON
+- Auto-restart `kobong-zivpn` service on config change
+- Flows: **Create / List / Delete / Restart Service**
+- Rollback on DB-side conflict (removes password if account insert fails)
+- Config text with host, port, obfs, DNAT range info
 
 ---
 
-## M4 — ZIVPN CRUD + Service Control
+## 🚧 M5 — Xray Protocols CRUD (next)
 
-- [ ] `createzivpn`: add password ke config.json, restart service
-- [ ] `delzivpn`: remove password
-- [ ] `renewzivpn`: update expiry di DB (password sama)
-- [ ] `restart`, `status` service dari Telegram
-- [ ] Ganti port ZIVPN (auto-update DNAT rules)
-- [ ] Ganti obfs / rotate passwords
+Untuk VMess/VLESS/Trojan/Shadowsocks, butuh manipulasi
+`/etc/xray/config.json` yang lebih kompleks:
+
+- [ ] `services/xray_accounts.py` — safe JSON manipulation via `jq` di remote
+- [ ] Generate UUID untuk VMess/VLESS
+- [ ] Auto-restart xray service after config change
+- [ ] Generate ready-to-paste `vmess://` / `vless://` / `trojan://` / `ss://` URLs
+- [ ] QR code image untuk scan langsung di client apps
+- [ ] Flows: Create / List / Delete / Renew per protokol
 
 ---
 
-## M5 — Extras
+## 🚧 M6 — Extras
 
-- [ ] Trial akun (durasi pendek, quota terbatas)
-- [ ] Backup config ke Google Drive via rclone
+- [ ] Trial account (durasi pendek, quota terbatas, tanpa potong saldo)
+- [ ] Backup config VPS ke Google Drive via rclone
 - [ ] Restore dari backup
-- [ ] Stats real-time (bandwidth via vnstat, RAM/CPU)
-- [ ] Autoreboot scheduler
-- [ ] Settings: ganti domain, banner text, harga produk
+- [ ] Stats real-time (bandwidth via vnstat, RAM/CPU) via SSH probes
+- [ ] Autoreboot scheduler (systemd timer di target VPS)
+- [ ] Settings: ganti domain, banner text, harga produk per-user
 
 ---
 
-## M6 — Admin Panel
+## 🚧 M7 — Admin Panel + Reporting
 
-- [ ] `/admin` command untuk super admin
+- [ ] `/admin` command untuk super admin only
 - [ ] Manage users: promote/demote, ban, adjust balance
 - [ ] Broadcast pesan ke semua user
-- [ ] Set harga per produk (SSH/VMess/VLESS/Trojan/Shadow/ZIVPN × durasi)
 - [ ] Laporan penjualan (harian/mingguan/bulanan)
 - [ ] Export CSV
+- [ ] Set harga per-produk (SSH/VMess/VLESS/Trojan/Shadow/ZIVPN × durasi)
+- [ ] Multi-VPS picker (kalau reseller punya banyak VPS aktif)
+- [ ] Expiry notification: bot auto-DM user H-1 sebelum akun expired
 
 ---
 
-## M7 — Payment Polish
+## 🚧 M8 — Payment Polish
 
-- [x] Poller auto-credit (M1)
-- [ ] Custom amount input (bukan hanya preset)
-- [ ] Faktur/receipt PDF ke chat setelah pembayaran
-- [ ] Refund flow (manual approve by admin)
-- [ ] Retry pending payments jika bot crash panjang
-- [ ] Alert user H-1 sebelum akun expired untuk renew otomatis
+- [ ] Custom nominal input (bukan cuma preset)
+- [ ] Faktur PDF ke chat setelah pembayaran
+- [ ] Refund flow (approve manual by admin)
+- [ ] Voucher/promo code
+- [ ] Batching untuk laporan revenue per gateway
+
+---
+
+**Rilis strategi:** M1-M4 sudah production-ready untuk testing. M5+ ditambah bertahap setelah user validasi flow existing.

@@ -1,41 +1,41 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────
-#  KOBONG VPN BOT — Main installer (M1 skeleton)
+#  KOBONG VPN BOT — Main installer
+#
 #  Installs a fresh multi-protocol VPN stack on Ubuntu 20/22/24 or
 #  Debian 10/11/12. Called by the Telegram bot via SSH.
 #
 #  Idempotent: safe to re-run.
-#  Non-interactive: reads config from CLI flags or /etc/kobong/install.env
+#  Non-interactive: reads config from env vars.
 #
 #  Author  : KOBONG
 #  License : MIT
 # ─────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-readonly VERSION="0.1.0"
+readonly VERSION="0.2.0"
 readonly BRAND="KOBONG VPN BOT"
 readonly LOG_FILE="/var/log/kobong-install.log"
 readonly CONFIG_DIR="/etc/kobong"
 readonly BIN_DIR="/usr/local/sbin"
+readonly XRAY_CONFIG="/etc/xray/config.json"
 
 # ── Colors ──────────────────────────────────────────────────────────
-readonly C_RESET='\033[0m'
-readonly C_GREEN='\033[0;32m'
-readonly C_RED='\033[0;31m'
-readonly C_YELLOW='\033[0;33m'
-readonly C_BLUE='\033[0;36m'
-readonly C_BOLD='\033[1m'
+C_RESET='\033[0m'
+C_GREEN='\033[0;32m'
+C_RED='\033[0;31m'
+C_YELLOW='\033[0;33m'
+C_BLUE='\033[0;36m'
+C_BOLD='\033[1m'
 
 # ── Defaults (overridable via env) ──────────────────────────────────
 DOMAIN="${DOMAIN:-}"
-INSTALL_MODE="${INSTALL_MODE:-full}"   # full | xray | ssh | custom
+INSTALL_MODE="${INSTALL_MODE:-full}"       # full | xray | ssh | zivpn
 INSTALL_ZIVPN="${INSTALL_ZIVPN:-yes}"
 ZIVPN_PASSWORDS="${ZIVPN_PASSWORDS:-zi}"   # comma-separated
 ZIVPN_PORT="${ZIVPN_PORT:-5667}"
-BOT_CALLBACK_URL="${BOT_CALLBACK_URL:-}"   # optional: POST progress here
-BOT_CALLBACK_TOKEN="${BOT_CALLBACK_TOKEN:-}"
 
-# ── Logging helpers ─────────────────────────────────────────────────
+# ── Logging ─────────────────────────────────────────────────────────
 mkdir -p "$(dirname "$LOG_FILE")"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
@@ -44,17 +44,6 @@ ok()   { printf "${C_GREEN}[✓]${C_RESET} %s\n" "$*"; }
 warn() { printf "${C_YELLOW}[!]${C_RESET} %s\n" "$*" >&2; }
 err()  { printf "${C_RED}[✗]${C_RESET} %s\n" "$*" >&2; }
 die()  { err "$*"; exit 1; }
-
-# ── Callback to bot (best-effort, never fatal) ──────────────────────
-callback() {
-    local stage="$1" status="$2" pct="${3:-0}"
-    [[ -z "$BOT_CALLBACK_URL" ]] && return 0
-    curl -sf --max-time 5 -X POST "$BOT_CALLBACK_URL" \
-        -H "Content-Type: application/json" \
-        -H "Authorization: Bearer ${BOT_CALLBACK_TOKEN}" \
-        -d "{\"stage\":\"$stage\",\"status\":\"$status\",\"pct\":$pct}" \
-        >/dev/null 2>&1 || true
-}
 
 # ── Pre-flight ──────────────────────────────────────────────────────
 require_root() {
@@ -65,36 +54,20 @@ detect_os() {
     [[ -f /etc/os-release ]] || die "/etc/os-release not found"
     # shellcheck disable=SC1091
     . /etc/os-release
-    local id="${ID:-unknown}"
-    local ver="${VERSION_ID:-0}"
     log "OS: $PRETTY_NAME"
-    case "$id" in
-        ubuntu)
-            [[ ${ver%%.*} -ge 20 ]] || die "Ubuntu 20.04+ required (found $ver)"
-            ;;
-        debian)
-            [[ ${ver%%.*} -ge 10 ]] || die "Debian 10+ required (found $ver)"
-            ;;
-        *)
-            die "Unsupported OS: $id"
-            ;;
+    case "${ID:-}" in
+        ubuntu) [[ ${VERSION_ID%%.*} -ge 20 ]] || die "Ubuntu 20.04+ required" ;;
+        debian) [[ ${VERSION_ID%%.*} -ge 10 ]] || die "Debian 10+ required" ;;
+        *) die "Unsupported OS: ${ID:-unknown}" ;;
     esac
-    export OS_ID="$id"
-    export OS_VER="$ver"
+    export OS_ID="${ID}" OS_VER="${VERSION_ID}"
 }
 
 check_arch() {
     local arch
     arch="$(uname -m)"
-    [[ "$arch" == "x86_64" ]] || die "Unsupported architecture: $arch (need x86_64)"
+    [[ "$arch" == "x86_64" ]] || die "Unsupported architecture: $arch"
     log "Architecture: $arch"
-}
-
-check_virt() {
-    local virt
-    virt="$(systemd-detect-virt 2>/dev/null || echo unknown)"
-    [[ "$virt" == "openvz" ]] && die "OpenVZ is not supported"
-    log "Virtualization: $virt"
 }
 
 check_ip() {
@@ -107,8 +80,7 @@ check_ip() {
 
 # ── Base packages ───────────────────────────────────────────────────
 install_base() {
-    log "Installing base packages…"
-    callback "base_packages" "running" 10
+    log "MENJALANKAN base_packages"
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -qq
     apt-get install -y -qq --no-install-recommends \
@@ -116,104 +88,188 @@ install_base() {
         ca-certificates gnupg lsb-release \
         openssl socat cron \
         net-tools iproute2 iptables iptables-persistent \
-        dnsutils vnstat chrony \
+        dnsutils \
         build-essential \
-        python3 python3-pip
-    ok "Base packages installed"
-    callback "base_packages" "done" 20
+        python3 python3-pip \
+        uuid-runtime
+    ok "base_packages done"
 }
 
 setup_dirs() {
-    log "Setting up config directories…"
+    log "Setting up directories…"
     mkdir -p "$CONFIG_DIR" "$BIN_DIR"
     mkdir -p /etc/kobong/{xray,ssh,zivpn,ssl}
     mkdir -p /var/log/kobong
+    mkdir -p /etc/xray
     ok "Directories ready"
 }
 
-# ── Timezone ────────────────────────────────────────────────────────
 setup_timezone() {
-    timedatectl set-timezone Asia/Jakarta 2>/dev/null || warn "Failed to set timezone"
+    timedatectl set-timezone Asia/Jakarta 2>/dev/null || warn "Failed to set TZ"
     log "Timezone: $(date +'%Z %z')"
 }
 
-# ── Domain (custom or random) ───────────────────────────────────────
 setup_domain() {
     if [[ -z "$DOMAIN" ]]; then
-        # Random subdomain — placeholder, real impl fetched from bot in M2
-        DOMAIN="kobong-$(openssl rand -hex 3).sslip.io"
-        log "No domain provided — using sslip.io fallback: $DOMAIN"
+        # Use sslip.io fallback: <ip>.sslip.io resolves to your IP automatically
+        # Format: 1-2-3-4.sslip.io
+        local sanitized_ip="${PUBLIC_IP//./-}"
+        DOMAIN="${sanitized_ip}.sslip.io"
+        log "No domain provided → using sslip.io fallback: $DOMAIN"
     fi
     echo "$DOMAIN" > "$CONFIG_DIR/domain"
     ok "Domain: $DOMAIN"
 }
 
-# ── SSL via acme.sh ─────────────────────────────────────────────────
+# ── SSL certificate ─────────────────────────────────────────────────
 install_ssl() {
-    log "Installing SSL certificate for $DOMAIN…"
-    callback "ssl" "running" 30
-    if ! command -v ~/.acme.sh/acme.sh >/dev/null 2>&1; then
-        curl -fsSL https://get.acme.sh | sh -s email="admin@$DOMAIN"
+    log "MENJALANKAN ssl for $DOMAIN"
+
+    # Install acme.sh if not present
+    if [[ ! -x /root/.acme.sh/acme.sh ]]; then
+        curl -fsSL https://get.acme.sh | sh -s email="admin@${DOMAIN}" >/dev/null 2>&1 || \
+            warn "acme.sh install failed, will use self-signed"
     fi
-    # shellcheck disable=SC1090
-    export PATH="$HOME/.acme.sh:$PATH"
 
-    # Stop anything on port 80
-    systemctl stop nginx 2>/dev/null || true
+    # Free up port 80
+    systemctl stop nginx haproxy 2>/dev/null || true
 
-    if ~/.acme.sh/acme.sh --issue -d "$DOMAIN" --standalone -k ec-256 \
-        --server letsencrypt --force; then
-        ~/.acme.sh/acme.sh --installcert -d "$DOMAIN" \
+    if [[ -x /root/.acme.sh/acme.sh ]] && \
+       /root/.acme.sh/acme.sh --set-default-ca --server letsencrypt >/dev/null 2>&1 && \
+       /root/.acme.sh/acme.sh --issue -d "$DOMAIN" --standalone -k ec-256 --force >/dev/null 2>&1
+    then
+        /root/.acme.sh/acme.sh --installcert -d "$DOMAIN" \
             --fullchainpath "$CONFIG_DIR/ssl/fullchain.pem" \
             --keypath "$CONFIG_DIR/ssl/privkey.pem" \
-            --ecc
-        chmod 644 "$CONFIG_DIR/ssl/"*.pem
-        ok "SSL certificate issued"
+            --ecc >/dev/null 2>&1
+        ok "SSL certificate issued from Let's Encrypt"
     else
-        warn "SSL issuance failed — continuing with self-signed"
+        warn "Let's Encrypt failed — using self-signed"
         openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes \
             -keyout "$CONFIG_DIR/ssl/privkey.pem" \
             -out "$CONFIG_DIR/ssl/fullchain.pem" \
-            -subj "/CN=$DOMAIN"
+            -subj "/CN=${DOMAIN}" 2>/dev/null
     fi
-    callback "ssl" "done" 40
+    chmod 644 "$CONFIG_DIR/ssl/"*.pem
+    log "ssl done"
 }
 
-# ── Xray (VMess / VLESS / Trojan / Shadowsocks) ─────────────────────
-install_xray() {
-    log "Installing Xray core…"
-    callback "xray" "running" 50
-    bash -c "$(curl -fsSL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" \
-        @ install --without-geodata >/dev/null
-    systemctl enable --now xray >/dev/null 2>&1 || warn "Xray systemd enable failed"
-    ok "Xray installed ($(xray version 2>/dev/null | head -1 || echo 'version unknown'))"
-    callback "xray" "done" 60
-}
-
-# ── SSH hardening + Dropbear ────────────────────────────────────────
+# ── SSH + Dropbear ──────────────────────────────────────────────────
 install_ssh_stack() {
-    log "Installing SSH + Dropbear…"
-    callback "ssh" "running" 70
+    log "MENJALANKAN ssh"
+
+    # Install dropbear
     apt-get install -y -qq dropbear
-    # Enable dropbear on port 143 and 109 (common bypass ports)
-    if [[ -f /etc/default/dropbear ]]; then
-        sed -i 's/^NO_START=.*/NO_START=0/' /etc/default/dropbear
-        sed -i 's/^DROPBEAR_PORT=.*/DROPBEAR_PORT=143/' /etc/default/dropbear
-        sed -i 's/^DROPBEAR_EXTRA_ARGS=.*/DROPBEAR_EXTRA_ARGS="-p 109"/' /etc/default/dropbear
-    fi
+
+    # Configure dropbear on port 143 + 109
+    cat > /etc/default/dropbear <<'EOF'
+NO_START=0
+DROPBEAR_PORT=143
+DROPBEAR_EXTRA_ARGS="-p 109"
+DROPBEAR_BANNER=""
+DROPBEAR_RECEIVE_WINDOW=65536
+EOF
+    systemctl enable dropbear >/dev/null 2>&1
     systemctl restart dropbear
-    ok "SSH + Dropbear ready"
-    callback "ssh" "done" 80
+
+    # Create kobong-ssh group for tracking accounts we manage
+    getent group kobong-ssh >/dev/null 2>&1 || groupadd --system kobong-ssh
+
+    # Add legit user shells so /bin/false gets accepted for tunneling
+    grep -qx "/bin/false" /etc/shells || echo "/bin/false" >> /etc/shells
+    grep -qx "/usr/sbin/nologin" /etc/shells || echo "/usr/sbin/nologin" >> /etc/shells
+
+    # SSH server allow password auth (needed for tunnel users)
+    sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+    sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+    systemctl restart ssh 2>/dev/null || systemctl restart sshd
+
+    ok "ssh done (SSH 22, Dropbear 143 + 109)"
 }
 
-# ── ZIVPN (UDP tunnel) ──────────────────────────────────────────────
+# ── Xray core ───────────────────────────────────────────────────────
+install_xray_core() {
+    log "MENJALANKAN xray"
+
+    # Official Xray install script (installs to /usr/local/bin/xray)
+    bash -c "$(curl -fsSL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" \
+        @ install --without-geodata >/dev/null 2>&1 || \
+        die "Xray install script failed"
+
+    # Base config — VMess (WS 80), VLESS (WS 8080), Trojan (WS 8443), Shadowsocks (WS 8443)
+    # No user inbound initially — bot adds them as needed
+    cat > "$XRAY_CONFIG" <<EOF
+{
+  "log": {
+    "loglevel": "warning",
+    "access": "/var/log/xray/access.log",
+    "error": "/var/log/xray/error.log"
+  },
+  "inbounds": [
+    {
+      "tag": "vmess-ws",
+      "port": 8080,
+      "protocol": "vmess",
+      "settings": { "clients": [] },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": { "path": "/vmess" }
+      }
+    },
+    {
+      "tag": "vless-ws",
+      "port": 8880,
+      "protocol": "vless",
+      "settings": { "clients": [], "decryption": "none" },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": { "path": "/vless" }
+      }
+    },
+    {
+      "tag": "trojan-ws",
+      "port": 2082,
+      "protocol": "trojan",
+      "settings": { "clients": [] },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": { "path": "/trojan" }
+      }
+    }
+  ],
+  "outbounds": [
+    { "protocol": "freedom", "tag": "direct" },
+    { "protocol": "blackhole", "tag": "block" }
+  ]
+}
+EOF
+    mkdir -p /var/log/xray
+    chown www-data:www-data /var/log/xray 2>/dev/null || true
+
+    systemctl enable xray >/dev/null 2>&1
+    systemctl restart xray
+
+    if systemctl is-active --quiet xray; then
+        ok "xray done ($(xray version 2>/dev/null | head -1))"
+    else
+        err "xray service failed to start"
+        journalctl -u xray -n 20 --no-pager || true
+        die "Xray installation failed"
+    fi
+}
+
+# ── ZIVPN (calls the separate script) ───────────────────────────────
 install_zivpn_stack() {
     [[ "$INSTALL_ZIVPN" == "yes" ]] || return 0
-    log "Installing ZIVPN UDP…"
-    callback "zivpn" "running" 85
-    bash "$(dirname "$0")/install_zivpn.sh" || die "ZIVPN installation failed"
-    ok "ZIVPN installed on UDP port $ZIVPN_PORT"
-    callback "zivpn" "done" 95
+    log "MENJALANKAN zivpn"
+
+    local zivpn_script="$(dirname "$0")/install_zivpn.sh"
+    [[ -f "$zivpn_script" ]] || die "install_zivpn.sh not found next to this script"
+
+    ZIVPN_PORT="$ZIVPN_PORT" ZIVPN_PASSWORDS="$ZIVPN_PASSWORDS" \
+        bash "$zivpn_script" || die "ZIVPN installation failed"
+
+    ok "zivpn done (UDP :${ZIVPN_PORT})"
 }
 
 # ── Finalize ────────────────────────────────────────────────────────
@@ -228,15 +284,14 @@ finalize() {
   "public_ip": "$PUBLIC_IP",
   "mode": "$INSTALL_MODE",
   "protocols": {
-    "xray": true,
-    "ssh": true,
-    "dropbear": true,
-    "zivpn": $( [[ "$INSTALL_ZIVPN" == "yes" ]] && echo true || echo false )
+    "xray": $([[ "$INSTALL_MODE" != "ssh" && "$INSTALL_MODE" != "zivpn" ]] && echo true || echo false),
+    "ssh": $([[ "$INSTALL_MODE" != "zivpn" ]] && echo true || echo false),
+    "dropbear": $([[ "$INSTALL_MODE" != "zivpn" ]] && echo true || echo false),
+    "zivpn": $([[ "$INSTALL_ZIVPN" == "yes" ]] && echo true || echo false)
   }
 }
 EOF
-    ok "Install manifest saved to $CONFIG_DIR/install.json"
-    callback "install" "completed" 100
+    ok "Manifest saved to $CONFIG_DIR/install.json"
 }
 
 # ── Main ────────────────────────────────────────────────────────────
@@ -257,7 +312,6 @@ BANNER
     require_root
     detect_os
     check_arch
-    check_virt
     check_ip
 
     setup_dirs
@@ -269,12 +323,12 @@ BANNER
         full)
             install_ssh_stack
             install_ssl
-            install_xray
+            install_xray_core
             install_zivpn_stack
             ;;
         xray)
             install_ssl
-            install_xray
+            install_xray_core
             ;;
         ssh)
             install_ssh_stack

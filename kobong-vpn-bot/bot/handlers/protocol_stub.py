@@ -1,7 +1,6 @@
-"""Generic stub handler for protocol callbacks (M1 placeholder).
+"""Fallback stub for protocols that don't have full CRUD implementations yet.
 
-Real per-protocol logic (create/renew/delete/list/lock/check) will be added
-in M3-M5. For now this responds gracefully so navigation doesn't dead-end.
+Registered LAST so specific handlers (ssh:*, zivpn:*) take precedence.
 """
 from __future__ import annotations
 
@@ -12,12 +11,10 @@ from telegram.ext import CallbackQueryHandler, ContextTypes
 from ..keyboards import back_only
 
 _PROTO_LABELS = {
-    "ssh": "🔐 SSH",
     "vmess": "📦 VMess",
     "vless": "⚡ VLESS",
     "trojan": "🛡 Trojan",
     "shadow": "👥 Shadowsocks",
-    "zivpn": "🚀 ZIVPN",
     "openvpn": "🔓 OpenVPN",
     "slowdns": "🌐 SlowDNS",
 }
@@ -30,9 +27,8 @@ _ACTION_LABELS = {
     "lock": "Lock / Unlock",
     "check": "Cek Login",
     "trial": "Trial Akun",
-    "restart": "Restart Service",
-    "config": "Ganti Port / Password",
     "status": "Status Service",
+    "config": "Ganti Config",
 }
 
 
@@ -48,15 +44,18 @@ async def protocol_stub(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     await q.edit_message_text(
         f"<b>{proto_label} → {action_label}</b>\n\n"
-        f"🚧 Fitur ini akan aktif setelah kamu:\n"
-        f"1. Daftarkan VPS (Milestone 2)\n"
-        f"2. Install {proto_label.split()[-1]} stack di VPS tersebut\n\n"
-        f"Milestone saat ini: <b>M1 — Scaffold & Fondasi</b>",
+        f"🚧 Untuk {proto_label} CRUD lengkap saya butuh manipulasi Xray "
+        f"config.json JSON — akan ditambahkan setelah kamu test SSH & ZIVPN "
+        f"berjalan mulus.\n\n"
+        f"<i>Sudah tersedia sekarang:</i>\n"
+        f"• 🔐 SSH (create/list/delete/renew)\n"
+        f"• 🚀 ZIVPN (create/list/delete/restart)",
         parse_mode=ParseMode.HTML,
         reply_markup=back_only(),
     )
 
 
 def register(app) -> None:
-    pattern = r"^(ssh|vmess|vless|trojan|shadow|zivpn|openvpn|slowdns):"
+    # Only match protocols WITHOUT full impl. Do NOT include ssh|zivpn here.
+    pattern = r"^(vmess|vless|trojan|shadow|openvpn|slowdns):"
     app.add_handler(CallbackQueryHandler(protocol_stub, pattern=pattern))

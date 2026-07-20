@@ -3,8 +3,7 @@
 Starts:
     1. SQLite/Postgres schema init
     2. Telegram bot polling
-    3. Background Pakasir payment poller (no webhook needed — pure polling
-       against Pakasir API, same pattern as user's BOTRDP bot)
+    3. Background Pakasir payment poller (no webhook)
 
 Run:
     python -m bot
@@ -23,9 +22,12 @@ from .config import settings
 from .db import init_db
 from .handlers import payment as h_payment
 from .handlers import protocol_stub as h_proto
+from .handlers import ssh_account as h_ssh
 from .handlers import start as h_start
 from .handlers import vps as h_vps
+from .handlers import zivpn_account as h_zivpn
 from .payment_poller import PaymentPoller
+from .ssh_client import SSHConnectionPool
 
 
 def _setup_logging() -> None:
@@ -36,6 +38,7 @@ def _setup_logging() -> None:
     )
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("telegram.ext").setLevel(logging.INFO)
+    logging.getLogger("asyncssh").setLevel(logging.WARNING)
 
 
 async def _run() -> None:
@@ -52,13 +55,20 @@ async def _run() -> None:
         .build()
     )
 
-    # Register handlers (specific patterns before catch-all)
-    h_start.register(app)
-    h_vps.register(app)
-    h_payment.register(app)
-    h_proto.register(app)  # catch-all for protocol callbacks
+    # Shared resources on app.bot_data (accessible in handlers via context)
+    app.bot_data["ssh_pool"] = SSHConnectionPool()
 
-    # Payment poller (replaces webhook server)
+    # Register handlers — order matters for pattern precedence:
+    #   ConversationHandlers (with specific entry patterns) must be first,
+    #   then plain callback routers, then the protocol_stub catch-all.
+    h_start.register(app)     # /start, menu:*
+    h_vps.register(app)       # vps:*  + add wizard
+    h_ssh.register(app)       # ssh:*  (full CRUD)
+    h_zivpn.register(app)     # zivpn:* (full CRUD)
+    h_payment.register(app)   # pay:*
+    h_proto.register(app)     # fallback for vmess/vless/trojan/shadow/openvpn/slowdns
+
+    # Payment poller (polling-based, no webhook)
     poller = PaymentPoller(app.bot)
     app.bot_data["poller"] = poller
 
@@ -70,8 +80,9 @@ async def _run() -> None:
     log.info("✅ Bot online. Admin IDs: %s", settings.admin_ids or "(none)")
     log.info(
         "💰 Pakasir: %s",
-        "ENABLED (polling every 10s)" if settings.is_pakasir_enabled else "disabled (fill PAKASIR_* env)",
+        "ENABLED (polling every 10s)" if settings.is_pakasir_enabled else "disabled",
     )
+    log.info("🔐 SSH pool size: %d", settings.ssh_pool_size)
 
     stop_event = asyncio.Event()
 
