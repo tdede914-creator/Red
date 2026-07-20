@@ -23,8 +23,10 @@ RUN useradd -m -u 1000 kobong && \
     chown -R kobong:kobong /app
 USER kobong
 
-# Data + webhook
 VOLUME ["/app/data"]
-EXPOSE 8080
+
+# Simple liveness check — verify the python process is running
+HEALTHCHECK --interval=60s --timeout=5s --start-period=20s --retries=3 \
+    CMD pgrep -f "python -m bot" > /dev/null || exit 1
 
 CMD ["python", "-m", "bot"]

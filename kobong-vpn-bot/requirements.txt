@@ -1,7 +1,7 @@
 # Telegram bot framework
-python-telegram-bot[webhooks]==21.6
+python-telegram-bot==21.6
 
-# Async SSH client
+# Async SSH client (used from M2 onwards for remote VPS install)
 asyncssh==2.18.0
 
 # Database
@@ -14,9 +14,6 @@ httpx==0.27.2
 
 # Cryptography for storing VPS creds encrypted at rest
 cryptography==43.0.1
-
-# Web server for Pakasir webhook
-aiohttp==3.10.10
 
 # Config
 pydantic==2.9.2

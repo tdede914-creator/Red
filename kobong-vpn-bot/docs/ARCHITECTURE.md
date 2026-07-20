@@ -12,9 +12,9 @@
 │                    KOBONG BOT (VPS terpisah)                     │
 │                                                                  │
 │  ┌──────────────┐    ┌───────────────┐    ┌──────────────────┐  │
-│  │ Handlers     │    │ SSH Client    │    │ Pakasir Client   │  │
-│  │ (start, vps, │──▶ │ Pool (async-  │    │ (create/detail/  │  │
-│  │  ssh, zivpn, │    │  ssh)         │    │  webhook)        │  │
+│  │ Handlers     │    │ SSH Client    │    │ Pakasir Poller   │  │
+│  │ (start, vps, │──▶ │ Pool (async-  │    │ (background      │  │
+│  │  ssh, zivpn, │    │  ssh)         │    │  polling loop)   │  │
 │  │  payment...) │    └──────┬────────┘    └────────┬─────────┘  │
 │  └──────┬───────┘           │                      │            │
 │         │                   │                      │            │
@@ -23,23 +23,16 @@
 │  │ SQLAlchemy (async) ─ SQLite / Postgres                   │  │
 │  │ Tables: users, vps, accounts, orders, products           │  │
 │  └──────────────────────────────────────────────────────────┘  │
-│                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ aiohttp webhook server  :8080                            │  │
-│  │  GET  /health                                            │  │
-│  │  POST /webhook/pakasir  (payment callbacks)              │  │
-│  └──────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
-       │                                          ▲
-       │ SSH                                      │ HTTPS POST
-       ▼                                          │
-┌──────────────┐                        ┌─────────┴──────────┐
-│ Target VPS 1 │                        │ Pakasir gateway    │
-│ (customer)   │                        │  app.pakasir.com   │
-│ - xray       │                        └────────────────────┘
-│ - dropbear   │
-│ - zivpn      │
-│ - kobong-install.sh                                        
+       │                                          │
+       │ SSH                                      │ HTTPS GET (poll every 10s)
+       ▼                                          ▼
+┌──────────────┐                        ┌─────────────────────┐
+│ Target VPS 1 │                        │ Pakasir gateway     │
+│ (customer)   │                        │ app.pakasir.com     │
+│ - xray       │                        │ /api/transaction    │
+│ - dropbear   │                        │  detail             │
+│ - zivpn      │                        └─────────────────────┘
 └──────────────┘
 ┌──────────────┐
 │ Target VPS 2 │
@@ -47,10 +40,12 @@
 └──────────────┘
 ```
 
+**Note**: Bot **outbound-only** ke Pakasir & Telegram. Tidak ada inbound port yang perlu di-expose. No domain / TLS / reverse proxy required.
+
 ## Data Model
 
 ### `users`
-Bot users (bot owners + resellers). NOT the same as VPN account users.
+Bot users (bot admins + resellers). NOT the same as VPN account users.
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -88,7 +83,7 @@ Top-up transactions via Pakasir.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| order_ref | string unique | Format: KBG-{user_id}-{hex8} |
+| order_ref | string unique | Format: KBG-{tg_user_id}-{hex8} |
 | user_id | FK users | |
 | amount | int | Rupiah |
 | payment_method | string | qris, bri_va, etc |
@@ -104,10 +99,9 @@ Sellable plans (protocol × duration → price).
 - FERNET_KEY MUST be stable across bot restarts (else old data unreadable)
 - Rotation supported via `bot.crypto.rotate(old_key, new_key, ciphertext)`
 
-### Pakasir webhook
-- Verified with HMAC-SHA256 of raw body using `PAKASIR_WEBHOOK_SECRET`
-- Header: `X-Pakasir-Signature` (may need to update once Pakasir publishes their scheme)
-- Idempotent: re-processing a completed order is a no-op
+### Pakasir
+- **No webhook = no signature verification needed** — bot pulls data, tidak menerima data
+- API key hanya dipakai oleh bot outbound, tidak pernah di-expose
 
 ### Admin authorization
 - `SUPER_ADMIN_IDS` env → checked at user creation → role assigned once
@@ -115,14 +109,14 @@ Sellable plans (protocol × duration → price).
 
 ## Concurrency
 
-- Bot handlers are async, run in shared event loop
-- SSH operations use `asyncssh` connection pool (configurable `SSH_POOL_SIZE`)
-- Database sessions are short-lived per handler (context manager)
-- Long-running installs run as detached tasks with progress via edit-message
+- Bot handlers async, run in shared event loop
+- SSH operations via `asyncssh` connection pool (configurable `SSH_POOL_SIZE`)
+- Payment polling: 1 background task per pending order (auto-resume on restart)
+- Database sessions short-lived per handler (context manager)
 
 ## Deployment
 
-- Docker Compose (recommended)
-- Reverse proxy (Caddy/Nginx) for TLS termination on webhook
-- `data/` volume mounted for SQLite + logs
-- Systemd fallback if not using Docker
+- **Docker Compose** (recommended) — no ports exposed, outbound-only
+- **Systemd** fallback tersedia
+- `data/` volume mounted untuk SQLite + logs
+- **Tidak butuh** reverse proxy / TLS cert / domain

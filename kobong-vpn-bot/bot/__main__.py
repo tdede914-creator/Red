@@ -2,8 +2,9 @@
 
 Starts:
     1. SQLite/Postgres schema init
-    2. Telegram bot polling (async)
-    3. aiohttp webhook server for Pakasir callbacks (in same event loop)
+    2. Telegram bot polling
+    3. Background Pakasir payment poller (no webhook needed — pure polling
+       against Pakasir API, same pattern as user's BOTRDP bot)
 
 Run:
     python -m bot
@@ -24,7 +25,7 @@ from .handlers import payment as h_payment
 from .handlers import protocol_stub as h_proto
 from .handlers import start as h_start
 from .handlers import vps as h_vps
-from .webhook_server import WebhookServer
+from .payment_poller import PaymentPoller
 
 
 def _setup_logging() -> None:
@@ -33,7 +34,6 @@ def _setup_logging() -> None:
         level=settings.log_level,
         stream=sys.stdout,
     )
-    # Silence noisy libs
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("telegram.ext").setLevel(logging.INFO)
 
@@ -52,27 +52,27 @@ async def _run() -> None:
         .build()
     )
 
-    # Register handlers (order matters: specific patterns before catch-all)
+    # Register handlers (specific patterns before catch-all)
     h_start.register(app)
     h_vps.register(app)
     h_payment.register(app)
-    h_proto.register(app)  # catch-all for protocol callbacks (registered last)
+    h_proto.register(app)  # catch-all for protocol callbacks
 
-    # Webhook server for Pakasir
-    web = WebhookServer(app.bot)
+    # Payment poller (replaces webhook server)
+    poller = PaymentPoller(app.bot)
+    app.bot_data["poller"] = poller
 
     await app.initialize()
     await app.start()
     await app.updater.start_polling(drop_pending_updates=True)
-    await web.start()
+    await poller.start()
 
-    log.info("✅ Bot is online. Admin IDs: %s", settings.admin_ids or "(none)")
+    log.info("✅ Bot online. Admin IDs: %s", settings.admin_ids or "(none)")
     log.info(
         "💰 Pakasir: %s",
-        "ENABLED" if settings.is_pakasir_enabled else "disabled (fill PAKASIR_* env)",
+        "ENABLED (polling every 10s)" if settings.is_pakasir_enabled else "disabled (fill PAKASIR_* env)",
     )
 
-    # Wait for shutdown signal
     stop_event = asyncio.Event()
 
     def _handle_signal() -> None:
@@ -84,13 +84,12 @@ async def _run() -> None:
         try:
             loop.add_signal_handler(sig, _handle_signal)
         except NotImplementedError:
-            # Windows doesn't support add_signal_handler
-            pass
+            pass  # Windows
 
     await stop_event.wait()
 
     log.info("Shutting down…")
-    await web.stop()
+    await poller.stop()
     await app.updater.stop()
     await app.stop()
     await app.shutdown()

@@ -9,7 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Optional
 
-from pydantic import Field, HttpUrl, field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -36,15 +36,14 @@ class Settings(BaseSettings):
         description="SQLAlchemy async database URL",
     )
 
-    # ── Pakasir ─────────────────────────────────────────────────────
+    # ── Pakasir (polling-based, no webhook) ─────────────────────────
     pakasir_slug: str = Field("", description="Pakasir project slug")
     pakasir_api_key: str = Field("", description="Pakasir API key")
-    pakasir_webhook_secret: str = Field("", description="Secret for verifying webhook payloads")
-    public_webhook_url: str = Field("", description="Public URL of this bot for callbacks")
-
-    # ── Web server ──────────────────────────────────────────────────
-    webhook_host: str = Field("0.0.0.0", description="Webhook bind host")
-    webhook_port: int = Field(8080, ge=1, le=65535, description="Webhook bind port")
+    pakasir_method: str = Field("qris", description="Default Pakasir payment method")
+    pakasir_base_url: str = Field(
+        "https://app.pakasir.com",
+        description="Pakasir API base URL (only override for testing)",
+    )
 
     # ── Behavior ────────────────────────────────────────────────────
     currency: str = Field("Rp", description="Currency label")
