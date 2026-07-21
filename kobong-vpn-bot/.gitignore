@@ -14,7 +14,10 @@ env/
 ENV/
 .venv/
 *.egg-info/
-dist/
+# dist/ is intentionally tracked — contains the release ZIP
+# for users who prefer manual upload over git clone
+!dist/
+!dist/**
 build/
 .pytest_cache/
 .mypy_cache/
