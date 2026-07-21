@@ -75,27 +75,43 @@ install_system_deps() {
 
 # ── Fetch source ────────────────────────────────────────────────────
 fetch_source() {
+    # Case A: Manual upload — files already present, no .git needed
+    if [[ -f "${INSTALL_DIR}/install-bot.sh" && -d "${INSTALL_DIR}/bot" ]]; then
+        log "Existing installation detected at ${INSTALL_DIR}"
+        log "Using pre-uploaded files (skipping git clone)"
+        ok "Source ready at ${INSTALL_DIR}"
+        return
+    fi
+
+    # Case B: Previous install with git history — pull latest
     if [[ -d "${INSTALL_DIR}/.git" ]]; then
-        log "Existing install detected → git pull"
+        log "Existing git install detected → git pull"
         cd "${INSTALL_DIR}"
+        git config --global --add safe.directory "${INSTALL_DIR}" 2>/dev/null || true
         git fetch --all --prune
         git checkout "${REPO_BRANCH}"
         git pull --ff-only origin "${REPO_BRANCH}"
-    else
-        log "Cloning ${REPO_URL} (branch: ${REPO_BRANCH})…"
-        rm -rf "${INSTALL_DIR}"
-        # Clone parent repo then move subdir up
-        local tmp
-        tmp="$(mktemp -d)"
-        git clone --depth 1 -b "${REPO_BRANCH}" "${REPO_URL}" "${tmp}/repo"
-        mv "${tmp}/repo/${SUBDIR}" "${INSTALL_DIR}"
-        # Preserve git history for future pulls
-        mv "${tmp}/repo/.git" "${INSTALL_DIR}/.git"
-        (cd "${INSTALL_DIR}" && git config core.sparseCheckout true \
-            && echo "${SUBDIR}/*" > .git/info/sparse-checkout || true)
-        rm -rf "${tmp}"
+        ok "Source updated to latest ${REPO_BRANCH}"
+        return
     fi
-    ok "Source fetched to ${INSTALL_DIR}"
+
+    # Case C: Fresh install — need internet + GitHub access
+    log "Cloning ${REPO_URL} (branch: ${REPO_BRANCH})…"
+    if ! command -v git >/dev/null 2>&1; then
+        die "git is not installed and no local files found at ${INSTALL_DIR}"
+    fi
+
+    rm -rf "${INSTALL_DIR}"
+    local tmp
+    tmp="$(mktemp -d)"
+    if ! git clone --depth 1 -b "${REPO_BRANCH}" "${REPO_URL}" "${tmp}/repo" 2>&1 | tail -20; then
+        rm -rf "${tmp}"
+        die "git clone failed. If your VPS can't reach GitHub, upload the ZIP manually first"
+    fi
+    mv "${tmp}/repo/${SUBDIR}" "${INSTALL_DIR}"
+    mv "${tmp}/repo/.git" "${INSTALL_DIR}/.git" 2>/dev/null || true
+    rm -rf "${tmp}"
+    ok "Source cloned to ${INSTALL_DIR}"
 }
 
 # ── Python virtualenv ───────────────────────────────────────────────
@@ -226,8 +242,11 @@ EnvironmentFile=${ENV_FILE}
 ExecStart=${VENV_DIR}/bin/python -m bot
 Restart=always
 RestartSec=5
-StandardOutput=append:${INSTALL_DIR}/logs/bot.log
-StandardError=append:${INSTALL_DIR}/logs/bot.log
+# Log to BOTH journal (for journalctl) AND file (for tail -f).
+# journal-first so debugging is trivial: journalctl -u kobong-vpn-bot -f
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=kobong-vpn-bot
 
 # Security hardening
 NoNewPrivileges=true
@@ -255,9 +274,12 @@ start_service() {
     if systemctl is-active --quiet "${SERVICE_NAME}"; then
         ok "Service is running"
     else
-        warn "Service failed to start. Recent log:"
-        tail -n 30 "${INSTALL_DIR}/logs/bot.log" 2>/dev/null || \
-            journalctl -u "${SERVICE_NAME}" -n 30 --no-pager
+        warn "Service failed to start. Recent log (last 40 lines):"
+        echo "─────────────────────────────────────────────────────────"
+        journalctl -u "${SERVICE_NAME}" -n 40 --no-pager --no-hostname 2>/dev/null || \
+            tail -n 40 "${INSTALL_DIR}/logs/bot.log" 2>/dev/null || \
+            echo "(no logs available)"
+        echo "─────────────────────────────────────────────────────────"
         die "Please fix the error above and run: systemctl restart ${SERVICE_NAME}"
     fi
 }
@@ -271,8 +293,7 @@ print_summary() {
     printf "  Log file    : %s\n" "${INSTALL_DIR}/logs/bot.log"
     printf "\n${C_BOLD}Perintah berguna:${C_RESET}\n"
     printf "  Cek status  : systemctl status %s\n" "${SERVICE_NAME}"
-    printf "  Lihat log   : tail -f %s/logs/bot.log\n" "${INSTALL_DIR}"
-    printf "                atau: journalctl -u %s -f\n" "${SERVICE_NAME}"
+    printf "  Lihat log   : journalctl -u %s -f\n" "${SERVICE_NAME}"
     printf "  Restart     : systemctl restart %s\n" "${SERVICE_NAME}"
     printf "  Update SC   : cd %s && git pull && systemctl restart %s\n" "${INSTALL_DIR}" "${SERVICE_NAME}"
     printf "  Uninstall   : bash %s/uninstall-bot.sh\n" "${INSTALL_DIR}"
