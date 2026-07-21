@@ -175,7 +175,12 @@ SSH_POOL_SIZE=10
 LOG_LEVEL=INFO
 EOF
     chmod 600 "${ENV_FILE}"
-    ok ".env written (permissions: 600)"
+    # CRITICAL: .env is created by root, but the bot runs as 'kobong' user.
+    # Without this chown the bot fails with PermissionError reading .env.
+    if id -u kobong >/dev/null 2>&1; then
+        chown kobong:kobong "${ENV_FILE}"
+    fi
+    ok ".env written (permissions: 600, owner: kobong)"
 }
 
 # ── Create dedicated system user ────────────────────────────────────
@@ -188,6 +193,17 @@ create_user() {
     chown -R kobong:kobong "${INSTALL_DIR}"
     chmod 700 "${INSTALL_DIR}/data"
     ok "User + data directories ready"
+}
+
+# ── Final ownership sweep ───────────────────────────────────────────
+# Called right before starting the service. Catches anything created
+# after create_user() ran (e.g. .env, git-pull artifacts).
+final_chown() {
+    log "Final ownership sweep on ${INSTALL_DIR}…"
+    chown -R kobong:kobong "${INSTALL_DIR}"
+    chmod 600 "${ENV_FILE}" 2>/dev/null || true
+    chmod 700 "${INSTALL_DIR}/data" 2>/dev/null || true
+    ok "Ownership fixed"
 }
 
 # ── systemd unit ────────────────────────────────────────────────────
@@ -287,6 +303,7 @@ EOF
     create_user
     prompt_env
     install_systemd_unit
+    final_chown
     start_service
     print_summary
 }
