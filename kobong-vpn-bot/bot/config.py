@@ -47,9 +47,25 @@ class Settings(BaseSettings):
 
     # ── Behavior ────────────────────────────────────────────────────
     currency: str = Field("Rp", description="Currency label")
-    default_price_ssh: int = Field(5000, ge=500)
-    default_price_xray: int = Field(8000, ge=500)
-    default_price_zivpn: int = Field(10000, ge=500)
+
+    # ── Pricing model ────────────────────────────────────────────────
+    # KOBONG uses a "pay install once, unlimited accounts" model:
+    #   * Reseller pays default_price_install ONCE per VPS to trigger
+    #     the remote installation from the bot. After that, they can
+    #     create SSH/VMess/VLESS/Trojan/Shadow/ZIVPN accounts on
+    #     THEIR VPS for free (unlimited).
+    #   * Super admin is exempt from all fees.
+    #   * The default_price_* fields for SSH/XRAY/ZIVPN are kept for a
+    #     future "marketplace" feature (v2) where non-VPS-owning users
+    #     buy accounts on a shared/public VPS.
+    default_price_install: int = Field(50000, ge=0,
+        description="One-time fee to install VPN stack on a user-owned VPS")
+    default_price_ssh: int = Field(5000, ge=500,
+        description="Marketplace price per SSH account (v2, unused for now)")
+    default_price_xray: int = Field(8000, ge=500,
+        description="Marketplace price per Xray account (v2, unused for now)")
+    default_price_zivpn: int = Field(10000, ge=500,
+        description="Marketplace price per ZIVPN account (v2, unused for now)")
     default_duration_days: int = Field(30, ge=1, le=365)
     ssh_pool_size: int = Field(10, ge=1, le=100)
     log_level: str = Field("INFO", pattern=r"^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")

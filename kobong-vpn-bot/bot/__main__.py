@@ -40,6 +40,17 @@ def _setup_logging() -> None:
     logging.getLogger("telegram.ext").setLevel(logging.INFO)
     logging.getLogger("asyncssh").setLevel(logging.WARNING)
 
+    # Silence noisy PTBUserWarning about per_message=False on
+    # ConversationHandler + CallbackQueryHandler mix. Our design
+    # is intentional (we mix message and callback flows), and PTB
+    # docs confirm per_message=False is correct in that case.
+    import warnings
+    try:
+        from telegram.warnings import PTBUserWarning
+        warnings.filterwarnings("ignore", category=PTBUserWarning)
+    except ImportError:
+        pass
+
 
 async def _run() -> None:
     log = logging.getLogger("kobong")

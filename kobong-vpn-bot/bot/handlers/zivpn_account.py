@@ -1,4 +1,9 @@
-"""ZIVPN account CRUD flows via Telegram."""
+"""ZIVPN account CRUD flows via Telegram.
+
+Pricing model: creating ZIVPN accounts on a VPS the user OWNS is FREE.
+Install fee was paid once when the stack was installed; account
+creation is unlimited after that. Super admin is always free.
+"""
 from __future__ import annotations
 
 import logging
@@ -15,18 +20,16 @@ from telegram.ext import (
     filters,
 )
 
-from ..balance import InsufficientBalance, deduct, refund
-from ..config import settings
 from ..db import get_session
 from ..keyboards import back_only
-from ..models import VPS, Protocol
+from ..models import Protocol, VPS
 from ..services import zivpn_accounts as svc
 from .account_common import no_vps_error, pick_vps
 from .start import get_or_create_user
 
 log = logging.getLogger(__name__)
 
-# States (offset so they don't clash with ssh_account.py)
+# States (offset from ssh_account.py)
 Z_USERNAME, Z_DURATION = range(400, 402)
 Z_DELETE_USER, = range(500, 501)
 
@@ -57,11 +60,10 @@ async def create_username(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await update.message.reply_text(f"❌ {e}\nCoba lagi:")
         return Z_USERNAME
     context.user_data["username"] = username
-    price = settings.default_price_zivpn
     await update.message.reply_text(
         f"Label: <code>{username}</code>\n\n"
         f"Kirim <b>durasi (hari)</b>. Contoh: <code>30</code>\n\n"
-        f"Harga: Rp {price:,} per 30 hari (proporsional).",
+        f"💡 Akun ZIVPN di VPS kamu = <b>GRATIS</b> unlimited.",
         parse_mode=ParseMode.HTML,
     )
     return Z_DURATION
@@ -77,21 +79,19 @@ async def create_duration(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return Z_DURATION
 
     username = context.user_data["username"]
-    price = max(500, round(settings.default_price_zivpn * days / 30))
     kb = InlineKeyboardMarkup([[
-        InlineKeyboardButton("✅ Buat & Bayar", callback_data=f"zivpn:confirm:{days}"),
+        InlineKeyboardButton("✅ Buat Akun", callback_data=f"zivpn:confirm:{days}"),
         InlineKeyboardButton("❌ Batal", callback_data="zivpn:cancel"),
     ]])
     await update.message.reply_text(
         f"<b>Konfirmasi:</b>\n\n"
         f"Label   : <code>{username}</code>\n"
         f"Durasi  : {days} hari\n"
-        f"Harga   : <b>Rp {price:,}</b>\n",
+        f"Biaya   : <b>GRATIS</b> (VPS kamu)",
         parse_mode=ParseMode.HTML,
         reply_markup=kb,
     )
     context.user_data["days"] = days
-    context.user_data["price"] = price
     return ConversationHandler.END
 
 
@@ -107,13 +107,11 @@ async def create_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     username = context.user_data.get("username")
     days = context.user_data.get("days")
-    price = context.user_data.get("price")
     vps_id = context.user_data.get("vps_id")
-    if not (username and days and price and vps_id):
+    if not (username and days and vps_id):
         await q.edit_message_text("Session expired. Ulangi.", reply_markup=back_only())
         return
 
-    user = await get_or_create_user(update)
     await q.edit_message_text("⏳ Add password ke config ZIVPN + restart service…")
 
     async with get_session() as session:
@@ -123,23 +121,11 @@ async def create_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await q.edit_message_text("VPS tidak ditemukan.", reply_markup=back_only())
         return
 
-    async with get_session() as session:
-        try:
-            await deduct(session, user.id, price, memo=f"ZIVPN {username} {days}d")
-        except InsufficientBalance as e:
-            await q.edit_message_text(
-                f"❌ {e}\n\nTop up saldo dulu.",
-                reply_markup=back_only(),
-            )
-            return
-
     try:
         result = await svc.create_account(vps, username, days)
     except svc.ZIVPNError as e:
-        async with get_session() as session:
-            await refund(session, user.id, price, memo=f"refund ZIVPN {username}")
         await q.edit_message_text(
-            f"❌ Gagal:\n<code>{e}</code>\n\nSaldo dikembalikan.",
+            f"❌ Gagal:\n<code>{e}</code>",
             parse_mode=ParseMode.HTML,
             reply_markup=back_only(),
         )

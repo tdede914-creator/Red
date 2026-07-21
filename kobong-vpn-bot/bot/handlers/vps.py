@@ -142,12 +142,19 @@ async def vps_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         try:
             vps_id = int(parts[2])
         except (IndexError, ValueError):
-            # No specific VPS → show mode selection screen
             await q.edit_message_text(
                 "<b>🚀 Install Stack</b>\n\nPilih VPS dari list dulu.",
                 parse_mode=ParseMode.HTML,
                 reply_markup=vps_menu(has_vps=True),
             )
+            return
+        await _confirm_install(update, context, vps_id)
+        return
+
+    if action == "install-confirm":
+        try:
+            vps_id = int(parts[2])
+        except (IndexError, ValueError):
             return
         await _start_install(update, context, vps_id)
         return
@@ -191,7 +198,13 @@ async def vps_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
 
 # ── Install trigger ─────────────────────────────────────────────────
-async def _start_install(update: Update, context: ContextTypes.DEFAULT_TYPE, vps_id: int) -> None:
+async def _confirm_install(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, vps_id: int
+) -> None:
+    """Show install confirmation with price (skip confirmation for super admin)."""
+    from ..config import settings
+    from ..models import UserRole
+
     q = update.callback_query
     user = await get_or_create_user(update)
 
@@ -209,25 +222,139 @@ async def _start_install(update: Update, context: ContextTypes.DEFAULT_TYPE, vps
         await q.edit_message_text("⏳ Instalasi sudah berjalan.", reply_markup=back_only())
         return
 
-    # Kick off install in background
+    is_super = user.role == UserRole.SUPER_ADMIN
+
+    # Super admin: skip confirmation, install directly
+    if is_super:
+        await _start_install(update, context, vps_id)
+        return
+
+    # Reseller: show install fee confirmation
+    fee = settings.default_price_install
+
+    # Zero fee? Just install
+    if fee == 0:
+        await _start_install(update, context, vps_id)
+        return
+
+    # Insufficient balance? Show error
+    if user.balance < fee:
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("💰 Top Up Sekarang", callback_data="menu:payment")],
+            [InlineKeyboardButton("🔙 Menu Utama", callback_data="menu:main")],
+        ])
+        await q.edit_message_text(
+            f"<b>❌ Saldo Tidak Cukup</b>\n\n"
+            f"Biaya jasa install: <b>Rp {fee:,}</b>\n"
+            f"Saldo kamu       : Rp {user.balance:,}\n"
+            f"Kurang           : <b>Rp {fee - user.balance:,}</b>\n\n"
+            f"Top up dulu ya.",
+            parse_mode=ParseMode.HTML,
+            reply_markup=kb,
+        )
+        return
+
+    # OK, confirm
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton(
+            f"✅ Bayar Rp {fee:,} & Install",
+            callback_data=f"vps:install-confirm:{vps_id}",
+        )],
+        [InlineKeyboardButton("❌ Batal", callback_data="menu:main")],
+    ])
+    await q.edit_message_text(
+        f"<b>🚀 Konfirmasi Install</b>\n\n"
+        f"VPS      : <code>{vps.label}</code> ({vps.host})\n"
+        f"Biaya    : <b>Rp {fee:,}</b> (jasa install, bayar 1× per VPS)\n"
+        f"Saldo    : Rp {user.balance:,}\n"
+        f"Setelah  : <b>Rp {user.balance - fee:,}</b>\n\n"
+        f"💡 <b>Setelah install selesai</b>, kamu bisa create akun "
+        f"SSH/VMess/VLESS/Trojan/Shadowsocks/ZIVPN di VPS ini "
+        f"<b>UNLIMITED &amp; GRATIS</b>.\n\n"
+        f"Kalau install gagal, saldo akan otomatis dikembalikan.",
+        parse_mode=ParseMode.HTML,
+        reply_markup=kb,
+    )
+
+
+async def _start_install(update: Update, context: ContextTypes.DEFAULT_TYPE, vps_id: int) -> None:
+    """Actually run the install. Charges fee before triggering (except super admin).
+    Refunds on failure.
+    """
+    from ..balance import InsufficientBalance, deduct, refund
+    from ..config import settings
+    from ..models import UserRole
+
+    q = update.callback_query
+    user = await get_or_create_user(update)
+
+    async with get_session() as session:
+        result = await session.execute(
+            select(VPS).where(VPS.id == vps_id, VPS.owner_id == user.id)
+        )
+        vps = result.scalar_one_or_none()
+
+    if not vps:
+        await q.edit_message_text("VPS tidak ditemukan.", reply_markup=back_only())
+        return
+
+    if vps.status == VPSStatus.INSTALLING:
+        await q.edit_message_text("⏳ Instalasi sudah berjalan.", reply_markup=back_only())
+        return
+
+    is_super = user.role == UserRole.SUPER_ADMIN
+    fee = 0 if is_super else settings.default_price_install
+    user_id = user.id
+    tg_id = user.telegram_id
+
+    # Deduct upfront (for resellers) so double-clicks don't double-charge
+    if fee > 0:
+        try:
+            async with get_session() as session:
+                await deduct(session, user_id, fee, memo=f"install {vps.label}")
+        except InsufficientBalance as e:
+            await q.edit_message_text(
+                f"❌ {e}", reply_markup=back_only()
+            )
+            return
+
     async def edit_msg(text: str) -> None:
         try:
             await q.edit_message_text(text, parse_mode=ParseMode.HTML)
         except Exception as e:  # noqa: BLE001
-            # Ignore "message is not modified" and similar
             log.debug("edit_msg noop: %s", e)
 
     async def run_install() -> None:
         orch = InstallOrchestrator(
-            vps=vps,
-            install_mode="full",
-            install_zivpn=True,
+            vps=vps, install_mode="full", install_zivpn=True,
         )
         try:
             ok, msg = await orch.run(edit_msg)
             log.info("Install for VPS %s: ok=%s msg=%s", vps.id, ok, msg)
+
+            # Refund on failure
+            if not ok and fee > 0:
+                async with get_session() as session:
+                    new_bal = await refund(
+                        session, user_id, fee, memo=f"refund failed install {vps.label}"
+                    )
+                try:
+                    await context.bot.send_message(
+                        chat_id=tg_id,
+                        text=(
+                            f"💰 <b>Saldo dikembalikan</b>\n\n"
+                            f"Install gagal, biaya Rp {fee:,} sudah "
+                            f"di-refund. Saldo sekarang: Rp {new_bal:,}"
+                        ),
+                        parse_mode=ParseMode.HTML,
+                    )
+                except Exception:  # noqa: BLE001
+                    pass
         except Exception:  # noqa: BLE001
             log.exception("Install task crashed")
+            if fee > 0:
+                async with get_session() as session:
+                    await refund(session, user_id, fee, memo=f"refund crashed install {vps.label}")
 
     asyncio.create_task(run_install())
 

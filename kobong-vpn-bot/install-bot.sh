@@ -182,6 +182,10 @@ PAKASIR_METHOD=qris
 PAKASIR_BASE_URL=https://app.pakasir.com
 
 CURRENCY=Rp
+# One-time install fee per VPS. After paying, create accounts UNLIMITED FREE.
+# Super admin (you) is exempt.
+DEFAULT_PRICE_INSTALL=50000
+# Marketplace prices (v2, unused for now)
 DEFAULT_PRICE_SSH=5000
 DEFAULT_PRICE_XRAY=8000
 DEFAULT_PRICE_ZIVPN=10000

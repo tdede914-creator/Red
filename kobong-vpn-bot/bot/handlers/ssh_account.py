@@ -1,10 +1,19 @@
-"""SSH account CRUD flows via Telegram."""
+"""SSH account CRUD flows via Telegram.
+
+Pricing model: creating SSH accounts on a VPS the user OWNS is FREE.
+The user paid the one-time install fee already (see vps.py); after
+that, unlimited account creation is included. Super admin is always
+free regardless of VPS ownership.
+
+Access control: pick_vps() filters by owner_id, so users can only
+create/list/delete/renew accounts on VPS they own.
+"""
 from __future__ import annotations
 
 import logging
 
 from sqlalchemy import select
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import (
     CallbackQueryHandler,
@@ -15,11 +24,9 @@ from telegram.ext import (
     filters,
 )
 
-from ..balance import InsufficientBalance, deduct
-from ..config import settings
 from ..db import get_session
 from ..keyboards import back_only
-from ..models import Account, Protocol
+from ..models import Account, Protocol, VPS
 from ..services import ssh_accounts as svc
 from .account_common import no_vps_error, pick_vps
 from .start import get_or_create_user
@@ -59,17 +66,19 @@ async def create_username(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await update.message.reply_text(f"❌ {e}\nCoba lagi:")
         return S_USERNAME
     context.user_data["username"] = username
-    price_per_30 = settings.default_price_ssh
     await update.message.reply_text(
         f"Username: <code>{username}</code>\n\n"
         f"Kirim <b>durasi (hari)</b>. Contoh: <code>30</code>\n\n"
-        f"Harga: Rp {price_per_30:,} per 30 hari (proporsional untuk durasi lain).",
+        f"💡 Akun SSH di VPS kamu = <b>GRATIS</b> unlimited "
+        f"(kamu sudah bayar jasa install).",
         parse_mode=ParseMode.HTML,
     )
     return S_DURATION
 
 
 async def create_duration(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
     try:
         days = int((update.message.text or "").strip())
         if not (1 <= days <= 365):
@@ -79,25 +88,20 @@ async def create_duration(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return S_DURATION
 
     username = context.user_data["username"]
-    vps_id = context.user_data["vps_id"]
-    price = max(500, round(settings.default_price_ssh * days / 30))
 
-    # Confirm
     kb = InlineKeyboardMarkup([[
-        InlineKeyboardButton("✅ Buat & Bayar", callback_data=f"ssh:confirm:{days}"),
+        InlineKeyboardButton("✅ Buat Akun", callback_data=f"ssh:confirm:{days}"),
         InlineKeyboardButton("❌ Batal", callback_data="ssh:cancel"),
     ]])
     await update.message.reply_text(
         f"<b>Konfirmasi:</b>\n\n"
-        f"Username: <code>{username}</code>\n"
-        f"Durasi  : {days} hari\n"
-        f"Harga   : <b>Rp {price:,}</b>\n",
+        f"Username : <code>{username}</code>\n"
+        f"Durasi   : {days} hari\n"
+        f"Biaya    : <b>GRATIS</b> (VPS kamu)",
         parse_mode=ParseMode.HTML,
         reply_markup=kb,
     )
     context.user_data["days"] = days
-    context.user_data["price"] = price
-    context.user_data["vps_id"] = vps_id
     return ConversationHandler.END
 
 
@@ -109,7 +113,6 @@ async def create_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if action == "cancel":
         context.user_data.pop("username", None)
         context.user_data.pop("days", None)
-        context.user_data.pop("price", None)
         context.user_data.pop("vps_id", None)
         await q.edit_message_text("Batal.", reply_markup=back_only())
         return
@@ -117,17 +120,15 @@ async def create_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # confirm
     username = context.user_data.get("username")
     days = context.user_data.get("days")
-    price = context.user_data.get("price")
     vps_id = context.user_data.get("vps_id")
-    if not (username and days and price and vps_id):
-        await q.edit_message_text("Session expired. Ulangi dari menu.", reply_markup=back_only())
+    if not (username and days and vps_id):
+        await q.edit_message_text(
+            "Session expired. Ulangi dari menu.", reply_markup=back_only()
+        )
         return
 
-    user = await get_or_create_user(update)
     await q.edit_message_text("⏳ Sedang buat akun di VPS…")
 
-    # Look up VPS
-    from ..models import VPS
     async with get_session() as session:
         vps_result = await session.execute(select(VPS).where(VPS.id == vps_id))
         vps = vps_result.scalar_one_or_none()
@@ -135,29 +136,13 @@ async def create_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await q.edit_message_text("VPS tidak ditemukan.", reply_markup=back_only())
             return
 
-    # 1) Deduct balance FIRST (fail-fast if insufficient)
-    async with get_session() as session:
-        try:
-            await deduct(session, user.id, price, memo=f"SSH {username} {days}d")
-        except InsufficientBalance as e:
-            await q.edit_message_text(
-                f"❌ {e}\n\nTop up saldo dulu di menu 💰 Top Up Saldo.",
-                reply_markup=back_only(),
-            )
-            return
-
-    # 2) Create account remotely
     try:
         result = await svc.create_account(
             vps=vps, username=username, duration_days=days,
         )
     except svc.SSHAccountError as e:
-        # Refund on failure
-        from ..balance import refund
-        async with get_session() as session:
-            await refund(session, user.id, price, memo=f"refund SSH {username}")
         await q.edit_message_text(
-            f"❌ Gagal buat akun:\n<code>{e}</code>\n\nSaldo dikembalikan.",
+            f"❌ Gagal buat akun:\n<code>{e}</code>",
             parse_mode=ParseMode.HTML,
             reply_markup=back_only(),
         )
@@ -169,6 +154,7 @@ async def create_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         parse_mode=ParseMode.HTML,
         reply_markup=back_only(),
     )
+    context.user_data.clear()
 
 
 # ── LIST ────────────────────────────────────────────────────────────
@@ -222,7 +208,6 @@ async def delete_do(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         await update.message.reply_text("Session hilang. Ulangi.")
         return ConversationHandler.END
 
-    from ..models import VPS
     async with get_session() as session:
         result = await session.execute(select(VPS).where(VPS.id == vps_id))
         vps = result.scalar_one_or_none()
@@ -264,8 +249,10 @@ async def renew_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 async def renew_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     username = (update.message.text or "").strip().lower()
     context.user_data["username"] = username
-    await update.message.reply_text(f"Perpanjang berapa hari? Contoh: <code>30</code>",
-                                     parse_mode=ParseMode.HTML)
+    await update.message.reply_text(
+        f"Perpanjang berapa hari? Contoh: <code>30</code>",
+        parse_mode=ParseMode.HTML,
+    )
     return S_RENEW_DAYS
 
 
@@ -280,17 +267,7 @@ async def renew_days(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     username = context.user_data["username"]
     vps_id = context.user_data["vps_id"]
-    price = max(500, round(settings.default_price_ssh * days / 30))
 
-    user = await get_or_create_user(update)
-    async with get_session() as session:
-        try:
-            await deduct(session, user.id, price, memo=f"renew SSH {username} {days}d")
-        except InsufficientBalance as e:
-            await update.message.reply_text(f"❌ {e}")
-            return ConversationHandler.END
-
-    from ..models import VPS
     async with get_session() as session:
         result = await session.execute(select(VPS).where(VPS.id == vps_id))
         vps = result.scalar_one_or_none()
@@ -301,10 +278,7 @@ async def renew_days(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
         new_exp = await svc.renew_account(vps, username, days)
     except svc.SSHAccountError as e:
-        from ..balance import refund
-        async with get_session() as session:
-            await refund(session, user.id, price, memo=f"refund renew {username}")
-        await update.message.reply_text(f"❌ {e}\n\nSaldo dikembalikan.")
+        await update.message.reply_text(f"❌ {e}")
         return ConversationHandler.END
 
     await update.message.reply_text(
